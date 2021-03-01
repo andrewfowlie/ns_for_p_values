@@ -12,8 +12,8 @@ def dynesty(test_statistic, transform, n_dim, observed, n_live=100, **kwargs):
     """
     Nested sampling with dynesty
     """
-    sampler = NestedSampler(test_statistic, transform, n_dim, n_live=n_live, **kwargs)
-
+    sampler = NestedSampler(test_statistic, transform, n_dim, nlive=n_live, **kwargs)
+    
     for it, state in enumerate(sampler.sample(dlogz=1e-10)):
 
         threshold = state[3]
