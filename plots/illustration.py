@@ -73,7 +73,7 @@ for i in range(n):
 ax[0].text(0.65, 0.4, 'Estimate tail area by fraction\nof samples that fall into it',
            fontsize=8, horizontalalignment='center', verticalalignment='center', transform=ax[0].transAxes)
 
-ax[1].text(9.5,  0.12, 'At each iteration, threshold increases\nand yellow area compresses by factor $t$\n\nEstimate tail area by compression when\nthreshold reaches critical value',
+ax[1].text(9.5,  0.12, 'At each iteration, threshold increases\nand yellow area compresses by factor $e^{-1 / n}$\n\nEstimate tail area by compression when\nthreshold reaches critical value',
            fontsize=8, horizontalalignment='center', verticalalignment='center')
 
 # show random draws
