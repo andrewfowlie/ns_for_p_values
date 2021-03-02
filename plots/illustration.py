@@ -6,93 +6,103 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib import colors as mcolors
 import numpy as np
-from scipy.stats import chi2
+import scipy.stats
+
+from grad import gradient_fill
 
 np.random.seed(185)
 fig, ax = plt.subplots(1, 2, figsize=(8, 4), sharey=True)
 
 # define model - chi-squared with particular number of dofs
-model = chi2(3)
+model = scipy.stats.chi2(3)
 
 # define tail region of interest
-critical = 8.26
-p = model.sf(critical)
-
+chi2_critical = 8.26
+p_value = model.sf(chi2_critical)
 
 # plot pdf etc
 
-x = np.linspace(0, 15, 10000)
-tail = x > critical 
-y = model.pdf(x)
+chi2 = np.linspace(0, 15, 10000)
+tail = chi2 > chi2_critical 
+pdf = model.pdf(chi2)
 
 for a in ax:
     a.set_xlabel("$\chi^2$")
     a.set_xlim(0, 15)
-    dx = 0.1
-    a.plot(x, y, color="SeaGreen", lw=3)
+    a.plot(chi2, pdf, color="SeaGreen", lw=3)
     # shade tail region
-    a.fill_between(x, y, where=tail, color="Crimson", alpha=0.6, linewidth=0, zorder=-10, label="Desired tail area")
+    a.fill_between(chi2, pdf, where=tail, color="Crimson", alpha=0.6, linewidth=0, zorder=-10, label="Desired tail area")
+    # show critical
+    a.vlines(chi2_critical, 0, model.pdf(chi2_critical), color="Crimson", lw=3, label="Critical $\chi^2$")
     
 ax[0].set_ylabel("$p(\chi^2)$")
 ax[0].set_ylim(0, None)
 ax[0].set_yticks([])
-
-# MC sampling - show draws as small vertical lines
-
-ax[0].set_title("Monte Carlo")
-
-rv = model.rvs(size=50)
-ax[0].axvline(rv[0], ymax=0.05, color="black", label="50 random draws")
-for r in rv[1:]:
-    ax[0].axvline(r, ymax=0.05, color="black")
     
-# Nested sampling
+# show thresholds - make a list of them from uniform compression
 
-ax[1].set_title("Nested sampling")
+n = 6
+alpha = np.linspace(0.3, 1., n).tolist()
+x_start = model.sf(0.3)
+compression = p_value / x_start
+t = compression**(1. / n)
+nlive = -1. / np.log(t) 
+chi2_threshold = [model.isf(x_start * t**i) for i in range(0, n + 1)]
+print(nlive)
 
-star = 1.5
-
-agold = mcolors.colorConverter.to_rgba('Gold', alpha=.3)
-where = np.logical_and(x > star, x < critical)
-ax[1].fill_between(x, y, where=where, facecolor="Gold", edgecolor="Gold", alpha=0.3, linewidth=0, zorder=-5, label="We draw from $\chi^2 >$ threshold")
-ax[1].axvline(star, ymax=0.05, color="black", label="50 random draws")
-
-rv_star = []
-while len(rv_star) < 50:
-    r = model.rvs()
-    if r > star:
-        rv_star.append(r)
-
-for r in rv_star[1:]:
-    ax[1].axvline(r, ymax=0.05, color="black")
-
-# show arrow indicating increasing threshold
-
-x1 = star - 0.05
-x2 = star + 3
-y = 0.12
-arrow = mpatches.FancyArrowPatch((x1, y), (x2, y), mutation_scale=10, color="goldenrod",  zorder=15)
-ax[1].add_patch(arrow)
-
-# show thresholds
-
-for a in ax:
-    a.vlines(critical, 0, model.pdf(critical), color="Crimson", lw=3, label="Critical $\chi^2$")
-ax[1].vlines(star, 0, model.pdf(star), color="goldenrod", lw=3, label="Threshold $\chi^2$")
+for i, (t, a) in enumerate(zip(chi2_threshold, alpha)):
+    ax[1].vlines(t, 0, model.pdf(t), color="goldenrod", lw=3, alpha=a, label="Threshold $\chi^2$" if not i else None)
+    
+# show arrows and shading indicating increasing threshold    
+   
+for i in range(n):
+    dx = 0.03
+    x1 = chi2_threshold[i] - dx
+    x2 = chi2_threshold[i + 1] + dx
+    y = 0.4 * model.pdf(x1) if x1 > 1. else 0.6 * model.pdf(1.)
+    arrow = mpatches.FancyArrowPatch((x1, y), (x2, y), mutation_scale=10, color="goldenrod", lw=0, zorder=15, alpha=alpha[i])
+    ax[1].add_patch(arrow)
+    
+    where = np.logical_and(chi2 > x1, chi2 < x2)
+    ax[1].fill_between(chi2, pdf, where=where, alpha=alpha[i],
+                       color="Gold", linewidth=0, zorder=-5,
+                       label="We draw from $\chi^2 >$ threshold" if not i else None)
 
 # annotations
 
 ax[0].text(0.65, 0.4, 'Estimate tail area by fraction\nof samples that fall into it',
            fontsize=8, horizontalalignment='center', verticalalignment='center', transform=ax[0].transAxes)
 
-ax[1].text(9.5, y, 'At each iteration, threshold increases\nand yellow area compresses by factor $t$\n\nEstimate tail area by compression when\nthreshold reaches critical value',
+ax[1].text(9.5,  0.12, 'At each iteration, threshold increases\nand yellow area compresses by factor $t$\n\nEstimate tail area by compression when\nthreshold reaches critical value',
            fontsize=8, horizontalalignment='center', verticalalignment='center')
 
+# show random draws
+
+# MC sampling
+
+mc_draws = model.rvs(size=50)
+for i, r in enumerate(mc_draws):
+    ax[0].axvline(r, ymax=0.03, color="black", label="50 random draws" if not i else None)
+    
+# Nested sampling
+
+mc_draws = []
+while len(mc_draws) < 50:
+    r = model.rvs()
+    if r >= chi2_threshold[0]:
+        mc_draws.append(r)
+
+for i, r in enumerate(mc_draws):
+    ax[1].axvline(r, ymax=0.03, color="black", label="50 random draws above threshold" if not i else None, zorder=100)
 
 # finish up
-
-ax[0].legend(fontsize=8)
-ax[1].legend(fontsize=8)
+    
+for a in ax:
+    a.legend(fontsize=8)
+    a.set_ylim(0, None)
+    
+ax[0].set_title("Monte Carlo")
+ax[1].set_title("Nested sampling")
 
 plt.tight_layout()
 plt.savefig("ill.pdf")
