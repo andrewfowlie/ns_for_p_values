@@ -7,7 +7,7 @@ from .result import Result
 
 def brute(test_statistic, transform, n_dim, observed, n=50000):
     """
-    Brute force MC sampling for p-value 
+    Brute force MC sampling for p-value
     """
     cube = np.random.rand(n, n_dim)
     pseudo_data = transform(cube)
