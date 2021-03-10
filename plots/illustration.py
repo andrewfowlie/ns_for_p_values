@@ -26,9 +26,9 @@ pdf = model.pdf(chi2)
 for a in ax:
     a.set_xlabel("$\chi^2$")
     a.set_xlim(0, 15)
-    a.plot(chi2, pdf, color="SeaGreen", lw=3)
+    a.plot(chi2, pdf, color="CornFlowerBlue", lw=3)
     # shade tail region
-    a.fill_between(chi2, pdf, where=tail, color="Crimson", alpha=0.6, linewidth=0, zorder=-10, label="Desired tail area")
+    a.fill_between(chi2, pdf, where=tail, color="Crimson", alpha=0.6, linewidth=0, zorder=-10)#, label="Desired tail area")
     # show critical
     a.vlines(chi2_critical, 0, model.pdf(chi2_critical), color="Crimson", lw=3, label="Critical $\chi^2$")
 
@@ -62,16 +62,21 @@ for i in range(n):
 
     where = np.logical_and(chi2 > x1, chi2 < x2)
     ax[1].fill_between(chi2, pdf, where=where, alpha=alpha[i],
-                       color="Gold", linewidth=0, zorder=-5,
-                       label="We draw from $\chi^2 >$ threshold" if not i else None)
+                       color="Gold", linewidth=0, zorder=-5)#,
+                       #label="We draw from $\chi^2 >$ threshold" if not i else None)
 
 # annotations
 
-ax[0].text(0.65, 0.4, 'Estimate tail area by fraction\nof samples that fall into it',
-           fontsize=8, horizontalalignment='center', verticalalignment='center', transform=ax[0].transAxes)
+ax[0].text(0.56, 0.125, 'Tail area $\\approx$ fraction of\nsamples in it',
+           fontsize=9, color="Crimson", horizontalalignment='left', verticalalignment='center', transform=ax[0].transAxes)
 
-ax[1].text(9.5, 0.12, 'At each iteration, threshold increases\nand yellow area compresses by factor $e^{-1 / n}$\n\nEstimate tail area by compression when\nthreshold reaches critical value',
-           fontsize=8, horizontalalignment='center', verticalalignment='center')
+ax[1].annotate(text='At each iteration:\n\n$\\bullet$ threshold increases\n$\\bullet$ draw from $\chi^2 >$ threshold\n$\\bullet$ yellow area compresses by $\sim \mathrm{e}^{-1 / n}$',
+               xy=(0.175,0.375), xytext=(0.35,0.5), xycoords=ax[1].transAxes,
+               arrowprops={'arrowstyle': '-|>', 'relpos': (0,1)},
+               fontsize=8, horizontalalignment='left', verticalalignment='center')
+
+ax[1].text(0.57, 0.15, 'Estimate tail area via\ncompression at critical\nthreshold value',
+           fontsize=9, color="Crimson", horizontalalignment='left', verticalalignment='center', transform=ax[1].transAxes)
 
 # show random draws
 
