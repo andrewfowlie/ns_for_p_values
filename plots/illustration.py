@@ -26,7 +26,7 @@ pdf = model.pdf(chi2)
 for a in ax:
     a.set_xlabel("$\chi^2$")
     a.set_xlim(0, 15)
-    a.plot(chi2, pdf, color="CornFlowerBlue", lw=3)
+    a.plot(chi2, pdf, color="RoyalBlue", lw=3)
     # shade tail region
     a.fill_between(chi2, pdf, where=tail, color="Crimson", alpha=0.6, linewidth=0, zorder=-10)#, label="Desired tail area")
     # show critical
@@ -67,16 +67,29 @@ for i in range(n):
 
 # annotations
 
-ax[0].text(0.56, 0.125, 'Tail area $\\approx$ fraction of\nsamples in it',
-           fontsize=9, color="Crimson", horizontalalignment='left', verticalalignment='center', transform=ax[0].transAxes)
+ax[0].text(0.74, 0.15,
+           'Tail area$\\approx$fraction of\n'
+           'samples above\n'
+           'critical value',
+           fontsize=8, color="Crimson", horizontalalignment='center', verticalalignment='center', transform=ax[0].transAxes)
 
-ax[1].annotate(text='At each iteration:\n\n$\\bullet$ threshold increases\n$\\bullet$ draw from $\chi^2 >$ threshold\n$\\bullet$ yellow area compresses by $\sim \mathrm{e}^{-1 / n}$',
-               xy=(0.175,0.375), xytext=(0.35,0.5), xycoords=ax[1].transAxes,
-               arrowprops={'arrowstyle': '-|>', 'relpos': (0,1)},
-               fontsize=8, horizontalalignment='left', verticalalignment='center')
+ax[1].text(0.35, 0.62, 'At each iteration:',
+           fontsize=8, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
 
-ax[1].text(0.57, 0.15, 'Estimate tail area via\ncompression at critical\nthreshold value',
-           fontsize=9, color="Crimson", horizontalalignment='left', verticalalignment='center', transform=ax[1].transAxes)
+ax[1].text(0.35, 0.56,
+           ' $\\bullet$ threshold increases\n'
+           ' $\\bullet$ draw from $\chi^2 >$ threshold\n'
+           ' $\\bullet$ yellow area compresses by$\\approx\mathrm{e}^{-1 / n}$',
+           fontsize=8, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
+
+arrow = mpatches.FancyArrowPatch((0.34, 0.605), (0.2, 0.465), mutation_scale=10, color="k", lw=0, zorder=15, transform=ax[1].transAxes)
+ax[1].add_patch(arrow)
+
+ax[1].text(0.74, 0.15,
+           'Tail area$\\approx$yellow area\n'
+           'when threshold reaches\n'
+           'critical value',
+           fontsize=8, color="Crimson", horizontalalignment='center', verticalalignment='center', transform=ax[1].transAxes)
 
 # show random draws
 
