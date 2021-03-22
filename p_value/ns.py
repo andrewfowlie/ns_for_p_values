@@ -83,6 +83,28 @@ def stop_at(test_statistic, observed, tuple_=False):
     capped.count = 0
     return capped
 
+def mn_ev_data(test_statistic, transform, n_dim, max_observed, n_live=100, basename="mn_", resume=False, **kwargs):
+    """
+    Return the contents of the nested sampling run with MN
+    """
+    pymultinest.solve(stop_at(test_statistic, max_observed),
+                      transform, n_dim, n_live_points=n_live,
+                      dump_callback=dumper(3, max_observed),
+                      outputfiles_basename=basename,
+                      resume=resume,
+                      n_iter_before_update=n_live, evidence_tolerance=0., **kwargs)
+
+    ev_data = np.genfromtxt(basename+"ev.dat")
+
+    ts_vals = ev_data[:,-3]
+    log_xs = np.arange(0, len(ts_vals), 1.)/n_live
+    p_vals = np.exp(-log_xs)
+    log_x_uncertainties = np.sqrt(log_xs/n_live)
+    p_val_errs = p_vals * log_x_uncertainties
+
+    result = np.array([ts_vals, p_vals, p_val_errs]).T
+    return result
+
 def mn(test_statistic, transform, n_dim, observed, n_live=100, basename="mn_", resume=False, **kwargs):
     """
     Nested sampling with MN
