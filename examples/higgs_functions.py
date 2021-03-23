@@ -1,8 +1,12 @@
+import os
 import numpy as np
 from scipy.special import binom, erf
+from scipy.stats import poisson
+from scipy.optimize import differential_evolution, minimize
 
 # Digitised data from Fig. 4 in [arXiv:1207.7214]
-inv_mass, counts, err_counts = np.genfromtxt("atlas_higgs_digamma_data.dat", unpack=True)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+inv_mass, counts, err_counts = np.genfromtxt(script_dir+"/atlas_higgs_digamma_data.dat", unpack=True)
 
 # Berstein polynomials (nu,k) for background model, x in (100,160) MeV
 def bernstein_basis(x, nu, k):
@@ -90,3 +94,33 @@ def wrapper_gaussian(x, params):
     spb = np.maximum(b,0)+s
     lls = [((k-mu)/e)**2 for (k,mu,e) in zip(data,spb,err)]
     return sum(lls)
+
+### Extended analysis
+# Get the background expectation value from the best-fitting point (en lieu of theoretical prediction)
+beta = np.array([1.10031837e+01, 8.87953673e+00, 7.61866954e+00, 6.49040517e+00, 5.73566527e+00])
+expected_bkg = np.array([background_signal(e, e+2.0,beta) for e in bins])
+
+def loglike_wrapper_spb(x, data):
+    # For now: just use the Gaussian instead of the crystal
+    sig = np.array([gaussian_signal(e, e+2.0, x[5:]) for e in bins])
+    bkg = np.array([background_signal(e, e+2.0, x[:5]) for e in bins])
+    spb = sig + np.maximum(bkg, 0)
+    lls = [poisson.logpmf(k=k, mu=mu) for (k,mu) in zip(data,spb)]
+    return -2.0*sum(lls)
+
+def loglike_wrapper_bkg(x, data):
+    bkg = np.array([background_signal(e, e+2.0, x) for e in bins])
+    lls = [poisson.logpmf(k=k, mu=mu) for (k,mu) in zip(data,expected_bkg)]
+    return -2.0*sum(lls)
+
+bkg_bfg = [11., 8.8, 7.6, 6.5, 5.7]
+bkg_bounds = 5*[[0.,100.]]
+sig_bfg = [126, 2.5, 350]
+sig_bounds = [[105.,155.], [0.1,5.], [0.,1.0e4]]
+
+def calculate_ts(data):
+    res0 = minimize(loglike_wrapper_bkg, x0=bkg_bfg, bounds=bkg_bounds, args=data)
+    ts0 = res0.fun
+    res1 = minimize(loglike_wrapper_spb, x0=bkg_bfg+sig_bfg, bounds=bkg_bounds+sig_bounds, args=data)
+    ts1 = res1.fun
+    return np.concatenate((res1.x, [ts0-ts1]))
