@@ -142,11 +142,12 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     settings.file_root = file_root
     settings.nlive = n_live
     settings.feedback = feedback
+    settings.logLstop = observed
 
     output = pypolychord.run_polychord(stop_at(test_statistic, observed, True),
                                        n_dim, 0, settings, transform,
                                        dumper(0, observed))
     n_iter = output.ndead # - n_live  # TODO PC kills final live points?
-    calls = output.nlike - (settings.nfail + 1)
+    calls = output.nlike  # May overestimate due to stopping conditions
 
     return ns_result(n_iter, n_live, calls)
