@@ -62,59 +62,64 @@ def dumper(index, observed):
             print("no live points")
     return dumper_
 
-def stop_at(test_statistic, observed, tuple_=False):
+def mn_wrap_loglike(test_statistic, observed):
     """
-    Implement stopping criteria
+    Implement stopping criteria for MN
     """
-    def capped(physical):
-        t = test_statistic(physical)
+    def wrapped(cube, n_dim, n_params, threshold):
+        a = np.array([cube[i] for i in range(n_dim)])
+        t = float(test_statistic(a))
+        wrapped.returned.append(t)
+        wrapped.threshold.append(threshold)
 
         # force convergence
         if t > observed:
-            capped.count += 1
-            if capped.count == 1:
+            if not wrapped.printed:
                 print("capping log-likelihood - beginning to stop")
+                wrapped.printed = True
             t = float(observed)
-
-        if tuple_:
-            return t, []
         return t
 
-    capped.count = 0
-    return capped
+    wrapped.printed = False
+    wrapped.returned = []
+    wrapped.threshold = []
+    return wrapped
 
-def mn_ev_data(test_statistic, transform, n_dim, max_observed, n_live=100, basename="mn_", resume=False, **kwargs):
+def mn_wrap_prior(transform):
     """
-    Return the contents of the nested sampling run with MN
+    Safely wrap MN prior
     """
-    pymultinest.solve(stop_at(test_statistic, max_observed),
-                      transform, n_dim, n_live_points=n_live,
-                      dump_callback=dumper(3, max_observed),
-                      outputfiles_basename=basename,
-                      resume=resume,
-                      n_iter_before_update=n_live, evidence_tolerance=0., **kwargs)
+    def wrapped(cube, n_dim, n_params):
+			  a = np.array([cube[i] for i in range(n_params)])
+			  b = transform(a)
+			  for i in range(n_params):
+				  cube[i] = b[i]
+				  
+    return wrapped
+    
+def pc_wrap(test_statistic):
+    """
+    Returns a tuple for PC signature
+    """
+    def wrapped(physical):
+        t = test_statistic(physical)
+        wrapped.returned.append(t)
+        return (t, [])
 
-    ev_data = np.genfromtxt(basename+"ev.dat")
+    wrapped.returned = []
+    return wrapped
 
-    ts_vals = ev_data[:,-3]
-    log_xs = np.arange(0, len(ts_vals), 1.)/n_live
-    p_vals = np.exp(-log_xs)
-    log_x_uncertainties = np.sqrt(log_xs/n_live)
-    p_val_errs = p_vals * log_x_uncertainties
-
-    result = np.array([ts_vals, p_vals, p_val_errs]).T
-    return result
-
-def mn(test_statistic, transform, n_dim, observed, n_live=100, basename="mn_", resume=False, **kwargs):
+def mn(test_statistic, transform, n_dim, observed, n_live=100, basename="mn_", resume=False, ev_data=False, **kwargs):
     """
     Nested sampling with MN
     """
-    pymultinest.solve(stop_at(test_statistic, observed),
-                      transform, n_dim, n_live_points=n_live,
-                      dump_callback=dumper(3, observed),
-                      outputfiles_basename=basename,
-                      resume=resume,
-                      n_iter_before_update=n_live, evidence_tolerance=0., **kwargs)
+    loglike = mn_wrap_loglike(test_statistic, observed)
+    pymultinest.run(loglike,
+                    mn_wrap_prior(transform), n_dim, n_live_points=n_live,
+                    dump_callback=dumper(3, observed),
+                    outputfiles_basename=basename,
+                    resume=resume,
+                    n_iter_before_update=n_live, evidence_tolerance=0., **kwargs)
 
     # get number of iterations
     ev = "{}ev.dat".format(basename)
@@ -127,10 +132,18 @@ def mn(test_statistic, transform, n_dim, observed, n_live=100, basename="mn_", r
         line = f.readlines()[1]
     calls = int(line.split()[1])
 
-    return ns_result(n_iter, n_live, calls)
+    if not ev_data:
+        return ns_result(n_iter, n_live, calls)
 
+    # get ev data
+    ev_data = np.genfromtxt(ev)
+    ts = ev_data[:, -3]
+    log_x = -np.arange(0, len(ts), 1.) / n_live
+    log_x_delta = np.sqrt(-log_x / n_live)
 
-def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, read_resume=False, **kwargs):
+    return ns_result(n_iter, n_live, calls), [ts, log_x, log_x_delta, loglike.returned, loglike.threshold]
+
+def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, **kwargs):
     """
     Nested sampling with PC
     """
@@ -138,16 +151,27 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     settings = PolyChordSettings(n_dim, 0, **kwargs)
     settings.nfail = n_live
     settings.precision_criterion = 0.
-    settings.read_resume = read_resume
+    settings.read_resume = resume
     settings.file_root = file_root
     settings.nlive = n_live
     settings.feedback = feedback
     settings.logLstop = observed
 
-    output = pypolychord.run_polychord(stop_at(test_statistic, observed, True),
+    loglike = pc_wrap(test_statistic)
+    output = pypolychord.run_polychord(loglike,
                                        n_dim, 0, settings, transform,
                                        dumper(0, observed))
-    n_iter = output.ndead # - n_live  # TODO PC kills final live points?
-    calls = output.nlike  # May overestimate due to stopping conditions
+    n_iter = output.ndead - n_live  # PC kills final live points so subtract that
+    calls = output.nlike
 
-    return ns_result(n_iter, n_live, calls)
+    if not ev_data:
+        return ns_result(n_iter, n_live, calls)
+
+    # get ev data
+    ev = "chains/{}_dead.txt".format(file_root)
+    ev_data = np.genfromtxt(ev)
+    ts = ev_data[:, 0]
+    log_x = -np.arange(0, len(ts), 1.) / n_live
+    log_x_delta = np.sqrt(-log_x / n_live)
+
+    return ns_result(n_iter, n_live, calls), [ts, log_x, log_x_delta, loglike.returned]

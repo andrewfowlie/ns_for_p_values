@@ -55,7 +55,7 @@ for d in dimensions:
             i += 1
     ax.step(new_obs_vals, safe_log10(p2), where='post', color='k', ls='-')
     # Nested sampling method
-    p3 = ns.mn_ev_data(test_statistic, transform, d, max(new_obs_vals), n_live=250)
+    _, p3 = ns.mn(test_statistic, transform, d, max(new_obs_vals), n_live=250, ev_data=True)
     ax.plot(p3[:,0], np.log10(p3[:,1]), c='grey', ls='-')
     up = np.log10(p3[:,1]) + safe_log10(p3[:,2]/p3[:,1])
     lo = np.log10(p3[:,1]) - safe_log10(p3[:,2]/p3[:,1])
