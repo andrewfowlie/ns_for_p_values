@@ -4,6 +4,7 @@ Sketch of method.
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib import lines
 import numpy as np
 import scipy.stats
 
@@ -30,7 +31,7 @@ for a in ax:
     # shade tail region
     a.fill_between(chi2, pdf, where=tail, color="Crimson", alpha=0.6, linewidth=0, zorder=-10)#, label="Desired tail area")
     # show critical
-    a.vlines(chi2_critical, 0, model.pdf(chi2_critical), color="Crimson", lw=3, label="Critical $\chi^2$")
+    a.vlines(chi2_critical, 0, model.pdf(chi2_critical), color="Crimson", lw=3)#, label="Critical $\chi^2$")
 
 ax[0].set_ylabel("$p(\chi^2)$")
 ax[0].set_ylim(0, None)
@@ -48,7 +49,7 @@ chi2_threshold = [model.isf(x_start * t**i) for i in range(0, n + 1)]
 print(nlive)
 
 for i, (t, a) in enumerate(zip(chi2_threshold, alpha)):
-    ax[1].vlines(t, 0, model.pdf(t), color="goldenrod", lw=3, alpha=a, label="Threshold $\chi^2$" if not i else None)
+    ax[1].vlines(t, 0, model.pdf(t), color="goldenrod", lw=3, alpha=a) # , label="Threshold $\chi^2$" if not i else None)
 
 # show arrows and shading indicating increasing threshold
 
@@ -97,7 +98,7 @@ ax[1].text(0.74, 0.15,
 
 mc_draws = model.rvs(size=50)
 for i, r in enumerate(mc_draws):
-    ax[0].axvline(r, ymax=0.03, color="black", label="50 random draws" if not i else None)
+    ax[0].axvline(r, ymax=0.03, color="darkgrey")#, label="50 random draws" if not i else None)
 
 # Nested sampling
 
@@ -107,14 +108,33 @@ while len(mc_draws) < 50:
     if r >= chi2_threshold[0]:
         mc_draws.append(r)
 
-for i, r in enumerate(mc_draws):
-    ax[1].axvline(r, ymax=0.03, color="black", label="50 random draws above threshold" if not i else None, zorder=100)
+# for i, r in enumerate(mc_draws):
+#     ax[1].axvline(r, ymax=0.03, color="black", label="50 random draws above threshold" if not i else None, zorder=100)
 
 # finish up
 
 for a in ax:
-    a.legend(fontsize=8)
+    # a.legend(fontsize=8)
     a.set_ylim(0, None)
+
+# custom legend markers
+
+def vertical_line(color, width, height):
+    return lines.Line2D([], [],  marker='|', linestyle='None', color=color, markersize=height, markeredgewidth=width)
+
+def add_vertical_line(handles, labels, label, color, width=1.5, height=8):
+    handles.append(vertical_line(color, width, height))
+    labels.append(label)
+
+handles, labels = ax[1].get_legend_handles_labels()
+add_vertical_line(handles, labels, "Threshold $\chi^2$", "goldenrod", 3, 12)
+add_vertical_line(handles, labels, "Critical $\chi^2$", "Crimson", 3, 12)
+ax[1].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5)
+
+handles, labels = ax[0].get_legend_handles_labels()
+add_vertical_line(handles, labels, "50 random draws", "darkgrey")
+add_vertical_line(handles, labels, "Critical $\chi^2$", "Crimson", 3, 12)
+ax[0].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5)
 
 ax[0].set_title("Monte Carlo")
 ax[1].set_title("Nested sampling")
