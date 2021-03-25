@@ -9,7 +9,7 @@ from mpi4py import MPI
 sys.path.insert(0, '../examples/')
 import higgs_functions as higgs
 
-n_batch_size = 100
+n_batch_size = 250
 n_batches = 400
 n_tasks = n_batch_size*n_batches
 
@@ -26,9 +26,9 @@ def current_datetime():
 
 def run_process_batch(index):
     res = np.array([wrapper_fun(rvs) for rvs in poisson.rvs(n_batch_size*[higgs.expected_bkg])])
-    out_file_name = path+'/temp/tsval_batch_{:d}.dat'.format(int(index))
+    out_file_name = output_path+'/temp/tsval_batch_{:d}.dat'.format(int(index))
     np.savetxt(out_file_name, res.T, fmt='%.6e')
-    tsvals = res[:,-1]
+    tsvals = np.array(res[:,-1])
     return tsvals
 
 
@@ -62,11 +62,11 @@ if (rank == 0):
         all_results = np.concatenate((all_results,buf))
         worker_id = info.Get_source()
         comm.send(task_id, dest=worker_id)
-        if ((task_id % 50 == 0)|(task_id==ntasks+ncores-1)):
+        if ((task_id % 50 == 0)|(task_id==n_batches+ncores-1)):
             print('Calculated another 50 batches of size {}. Currently at: {}'.format(task_id, n_batch_size), flush=True)
     print('{}: All MPI tasks finished after {:.1f} mins!'.format(current_datetime(), rank, (time.time()-start_time)/60.0), flush=True)
+    out_file_name = output_path+'/all_tsvals.dat'
     print('Formatting results and saving them to '+out_file_name+'.', flush=True)
-    out_file_name = path+'/all_tsvals.dat'
     np.savetxt(out_file_name, all_results.T, fmt='%.6e')
     print('All tasks complete! Finishing MPI routine now...', flush=True)
     MPI.Finalize()
