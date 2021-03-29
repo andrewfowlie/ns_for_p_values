@@ -62,27 +62,40 @@ def dumper(index, observed):
             print("no live points")
     return dumper_
 
-def mn_wrap_loglike(test_statistic, observed):
+def mn_wrap_loglike(test_statistic, observed, max_calls):
     """
     Implement stopping criteria for MN
     """
     def wrapped(cube, n_dim, n_params, threshold):
         a = np.array([cube[i] for i in range(n_dim)])
         t = float(test_statistic(a))
-        wrapped.returned.append(t)
-        wrapped.threshold.append(threshold)
+        wrapped.count += 1
+
+        calls = wrapped.count - wrapped.calls[-1]
+        if calls > max_calls:
+            wrapped.max_calls_exceeded = True
 
         # force convergence
-        if t > observed:
-            if not wrapped.printed:
-                print("capping log-likelihood - beginning to stop")
-                wrapped.printed = True
+        if t > observed or wrapped.max_calls_exceeded:
+            if wrapped.max_calls_exceeded:
+                print("forcing stop as max calls exceeded")
+            else:
+                print("forcing stop as max threshold exceeded")
             t = float(observed)
+
+        if threshold > observed or threshold > wrapped.threshold:
+            wrapped.threshold = threshold
+            wrapped.thresholds.append(wrapped.threshold)
+            wrapped.calls.append(wrapped.count)
+            print("threshold = {:.2f}. observed = {:.2f}. calls = {:.2f}. total = {:.2f}".format(threshold, observed, calls, wrapped.count), end="\r")
+
         return t
 
-    wrapped.printed = False
-    wrapped.returned = []
-    wrapped.threshold = []
+    wrapped.max_calls_exceeded = False
+    wrapped.threshold = -1e30
+    wrapped.thresholds = [-1e30]
+    wrapped.count = 0
+    wrapped.calls = [0]
     return wrapped
 
 def mn_wrap_prior(transform):
@@ -90,36 +103,34 @@ def mn_wrap_prior(transform):
     Safely wrap MN prior
     """
     def wrapped(cube, n_dim, n_params):
-			  a = np.array([cube[i] for i in range(n_params)])
-			  b = transform(a)
-			  for i in range(n_params):
-				  cube[i] = b[i]
-				  
+        a = np.array([cube[i] for i in range(n_params)])
+        b = transform(a)
+        for i in range(n_params):
+            cube[i] = b[i]
+
     return wrapped
-    
+
 def pc_wrap(test_statistic):
     """
     Returns a tuple for PC signature
     """
     def wrapped(physical):
         t = test_statistic(physical)
-        wrapped.returned.append(t)
         return (t, [])
 
-    wrapped.returned = []
     return wrapped
 
-def mn(test_statistic, transform, n_dim, observed, n_live=100, basename="mn_", resume=False, ev_data=False, **kwargs):
+def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, basename="chains/mn_", resume=False, ev_data=False, **kwargs):
     """
     Nested sampling with MN
     """
-    loglike = mn_wrap_loglike(test_statistic, observed)
+    loglike = mn_wrap_loglike(test_statistic, observed, max_calls)
     pymultinest.run(loglike,
                     mn_wrap_prior(transform), n_dim, n_live_points=n_live,
                     dump_callback=dumper(3, observed),
                     outputfiles_basename=basename,
                     resume=resume,
-                    n_iter_before_update=n_live, evidence_tolerance=0., **kwargs)
+                    evidence_tolerance=0., **kwargs)
 
     # get number of iterations
     ev = "{}ev.dat".format(basename)
@@ -141,7 +152,7 @@ def mn(test_statistic, transform, n_dim, observed, n_live=100, basename="mn_", r
     log_x = -np.arange(0, len(ts), 1.) / n_live
     log_x_delta = np.sqrt(-log_x / n_live)
 
-    return ns_result(n_iter, n_live, calls), [ts, log_x, log_x_delta, loglike.returned, loglike.threshold]
+    return ns_result(n_iter, n_live, calls), [ts, log_x, log_x_delta, loglike.thresholds, loglike.calls]
 
 def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, **kwargs):
     """
@@ -174,4 +185,4 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     log_x = -np.arange(0, len(ts), 1.) / n_live
     log_x_delta = np.sqrt(-log_x / n_live)
 
-    return ns_result(n_iter, n_live, calls), [ts, log_x, log_x_delta, loglike.returned]
+    return ns_result(n_iter, n_live, calls), [ts, log_x, log_x_delta]
