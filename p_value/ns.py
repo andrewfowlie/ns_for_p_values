@@ -2,13 +2,17 @@
 P-value computation with NS.
 """
 import numpy as np
+import logging
 
 from dynesty import NestedSampler
 import pymultinest
 import pypolychord
 from pypolychord.settings import PolyChordSettings
 
-from result import Result
+from .result import Result
+
+
+logging.getLogger().setLevel(logging.INFO)
 
 
 def ns_result(n_iter, n_live, calls):
@@ -25,7 +29,7 @@ def log_convergence(threshold, observed):
     """
     Common dumper function
     """
-    print("threshold = {}. observed = {}".format(threshold, observed))
+    logging.info("threshold = {}. observed = {}".format(threshold, observed))
 
 def dynesty(test_statistic, transform, n_dim, observed, n_live=100, **kwargs):
     """
@@ -43,7 +47,7 @@ def dynesty(test_statistic, transform, n_dim, observed, n_live=100, **kwargs):
             log_convergence(threshold, observed)
 
         if threshold > observed:
-            print("threshold reached observed - stopping")
+            logging.info("threshold reached observed - stopping")
             break
 
     calls = sampler.results["ncall"].sum()
@@ -59,7 +63,7 @@ def dumper(index, observed):
         if loglike.size > 0:
             log_convergence(loglike.min(), observed)
         else:
-            print("no live points")
+            logging.info("no live points")
     return dumper_
 
 def mn_wrap_loglike(test_statistic, observed, max_calls):
@@ -78,16 +82,16 @@ def mn_wrap_loglike(test_statistic, observed, max_calls):
         # force convergence
         if t > observed or wrapped.max_calls_exceeded:
             if wrapped.max_calls_exceeded:
-                print("forcing stop as max calls exceeded")
+                logging.debug("forcing stop as max calls exceeded")
             else:
-                print("forcing stop as max threshold exceeded")
+                logging.debug("forcing stop as max threshold exceeded")
             t = float(observed)
 
         if threshold > observed or threshold > wrapped.threshold:
             wrapped.threshold = threshold
             wrapped.thresholds.append(wrapped.threshold)
             wrapped.calls.append(wrapped.count)
-            print("threshold = {:.2f}. observed = {:.2f}. calls = {:.2f}. total = {:.2f}".format(threshold, observed, calls, wrapped.count), end="\r")
+            logging.debug("threshold = {:.2f}. observed = {:.2f}. calls = {:.2f}. total = {:.2f}".format(threshold, observed, calls, wrapped.count))
 
         return t
 
