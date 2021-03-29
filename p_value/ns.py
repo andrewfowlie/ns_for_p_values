@@ -8,7 +8,7 @@ import pymultinest
 import pypolychord
 from pypolychord.settings import PolyChordSettings
 
-from .result import Result
+from result import Result
 
 
 def ns_result(n_iter, n_live, calls):

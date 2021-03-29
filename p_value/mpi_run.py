@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 from datetime import datetime
 
@@ -6,14 +7,13 @@ import numpy as np
 from scipy.stats import poisson
 from mpi4py import MPI
 
-sys.path.insert(0, '../examples/')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, script_dir+'/../examples/')
+
 import higgs_functions as higgs
+from nested_errors import get_mn_pval
 
-n_batch_size = 250
-n_batches = 400
-n_tasks = n_batch_size*n_batches
-
-wrapper_mapping = { 'higgs': higgs.calculate_ts }
+wrapper_mapping = { 'higgs': higgs.calculate_ts, 'mn_pvals': get_mn_pval }
 
 output_path = sys.argv[1]
 try:
@@ -21,15 +21,20 @@ try:
 except KeyError:
     raise ValueError('Invalid wrapper selected!')
 
+n_batch_size = int(sys.argv[3])
+n_batches = int(sys.argv[4])
+n_tasks = n_batch_size*n_batches
+
 def current_datetime():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def run_process_batch(index):
-    res = np.array([wrapper_fun(rvs) for rvs in poisson.rvs(n_batch_size*[higgs.expected_bkg])])
+    # res = np.array([wrapper_fun(rvs) for rvs in poisson.rvs(n_batch_size*[higgs.expected_bkg])])
+    res0 = wrapper_fun(index, n_batch_size)
     out_file_name = output_path+'/temp/tsval_batch_{:d}.dat'.format(int(index))
-    np.savetxt(out_file_name, res.T, fmt='%.6e')
-    tsvals = np.array(res[:,-1])
-    return tsvals
+    np.savetxt(out_file_name, res0, fmt='%.6e')
+    res1 = np.array(res0[:,-1])
+    return res1
 
 
 # Set up the MPI environment and variables.
@@ -63,7 +68,7 @@ if (rank == 0):
         worker_id = info.Get_source()
         comm.send(task_id, dest=worker_id)
         if ((task_id % 50 == 0)|(task_id==n_batches+ncores-1)):
-            print('Calculated another 50 batches of size {}. Currently at: {}'.format(task_id, n_batch_size), flush=True)
+            print('Calculated another 50 batches of size {}. Currently at task id {}'.format(n_batch_size, task_id), flush=True)
     print('{}: All MPI tasks finished after {:.1f} mins!'.format(current_datetime(), rank, (time.time()-start_time)/60.0), flush=True)
     out_file_name = output_path+'/all_tsvals.dat'
     print('Formatting results and saving them to '+out_file_name+'.', flush=True)

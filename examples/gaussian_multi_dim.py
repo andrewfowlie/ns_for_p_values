@@ -1,10 +1,12 @@
 import sys
+import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm, chi2
 
-sys.path.append("..")
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(script_dir+"/..")
 from p_value.brute import *
 import p_value.ns as ns
 

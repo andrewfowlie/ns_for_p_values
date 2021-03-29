@@ -114,13 +114,19 @@ def loglike_wrapper_bkg(x, data):
     return -2.0*sum(lls)
 
 bkg_bfg = [11., 8.8, 7.6, 6.5, 5.7]
-bkg_bounds = 5*[[0.,100.]]
+bkg_bounds = 5*[[0.,50.]]
 sig_bfg = [126, 2.5, 350]
-sig_bounds = [[105.,155.], [0.1,5.], [0.,1.0e4]]
+sig_bounds = [[105.,155.], [0.01,5.], [0.,1.0e4]]
 
-def calculate_ts(data):
-    res0 = minimize(loglike_wrapper_bkg, x0=bkg_bfg, bounds=bkg_bounds, args=data)
-    ts0 = res0.fun
-    res1 = minimize(loglike_wrapper_spb, x0=bkg_bfg+sig_bfg, bounds=bkg_bounds+sig_bounds, args=data)
-    ts1 = res1.fun
-    return np.concatenate((res1.x, [ts0-ts1]))
+def calculate_ts(task_id, n_batch_size):
+    res = []
+    for i in range(n_batch_size):
+       data = poisson.rvs(expected_bkg)	
+       #res0 = minimize(loglike_wrapper_bkg, x0=bkg_bfg, bounds=bkg_bounds, args=data)
+       res0 = differential_evolution(loglike_wrapper_bkg, bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
+       ts0 = res0.fun
+       #res1 = minimize(loglike_wrapper_spb, x0=bkg_bfg+sig_bfg, bounds=bkg_bounds+sig_bounds, args=data)
+       res1 = differential_evolution(loglike_wrapper_spb, bounds=bkg_bounds+sig_bounds, args=(data,), popsize=25, tol=0.01)
+       ts1 = res1.fun
+       res.append( np.concatenate((res1.x, [ts0-ts1])) ) 
+    return np.array(res)
