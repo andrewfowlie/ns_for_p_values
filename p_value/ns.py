@@ -176,8 +176,10 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     output = pypolychord.run_polychord(loglike,
                                        n_dim, 0, settings, transform,
                                        dumper(0, observed))
-    n_iter = output.ndead - n_live  # PC kills final live points so subtract that
+
     calls = output.nlike
+    logX = np.genfromtxt("chains/pc.logX")
+    n_iter = -logX * n_live
 
     if not ev_data:
         return ns_result(n_iter, n_live, calls)
