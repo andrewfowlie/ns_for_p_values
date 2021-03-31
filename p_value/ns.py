@@ -3,6 +3,7 @@ P-value computation with NS.
 """
 import numpy as np
 import logging
+from scipy.special import logsumexp
 
 from dynesty import NestedSampler
 import pymultinest
@@ -177,8 +178,22 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
                                        n_dim, 0, settings, transform,
                                        dumper(0, observed))
 
+    # get number of calls directly
     calls = output.nlike
-    logX = np.genfromtxt("chains/pc.logX")
+
+    # my hack, new way is better ...
+    # logX = np.genfromtxt("chains/pc.logX")
+
+    # get logX from resume file
+    res = "chains/{}.resume".format(file_root)
+    with open(res) as f:
+        lines = f.readlines()
+    check = lines[44].strip()
+    assert check == "=== local volume -- log(<X_p>) ===", check
+    data_str = lines[45].strip()
+    logXp = np.array([float(e) for e in data_str.split()])
+    logX = logsumexp(logXp)
+
     n_iter = -logX * n_live
 
     if not ev_data:
