@@ -1,8 +1,9 @@
 """
 P-value computation with NS.
 """
-import numpy as np
+
 import logging
+import numpy as np
 from scipy.special import logsumexp
 
 from dynesty import NestedSampler
@@ -30,7 +31,7 @@ def log_convergence(threshold, observed):
     """
     Common dumper function
     """
-    logging.info("threshold = {}. observed = {}".format(threshold, observed))
+    logging.info("threshold = %s. observed = %s", threshold, observed)
 
 def dynesty(test_statistic, transform, n_dim, observed, n_live=100, **kwargs):
     """
@@ -72,8 +73,8 @@ def mn_wrap_loglike(test_statistic, observed, max_calls):
     Implement stopping criteria for MN
     """
     def wrapped(cube, n_dim, n_params, threshold):
-        a = np.array([cube[i] for i in range(n_dim)])
-        t = float(test_statistic(a))
+        cube_arr = np.array([cube[i] for i in range(n_dim)])
+        t = float(test_statistic(cube_arr))
         wrapped.count += 1
 
         calls = wrapped.count - wrapped.calls[-1]
@@ -108,10 +109,10 @@ def mn_wrap_prior(transform):
     Safely wrap MN prior
     """
     def wrapped(cube, n_dim, n_params):
-        a = np.array([cube[i] for i in range(n_params)])
-        b = transform(a)
+        cube_arr = np.array([cube[i] for i in range(n_params)])
+        phys_arr = transform(cube_arr)
         for i in range(n_params):
-            cube[i] = b[i]
+            cube[i] = phys_arr[i]
 
     return wrapped
 
@@ -120,8 +121,7 @@ def pc_wrap(test_statistic):
     Returns a tuple for PC signature
     """
     def wrapped(physical):
-        t = test_statistic(physical)
-        return (t, [])
+        return (test_statistic(physical), [])
 
     return wrapped
 
@@ -138,26 +138,26 @@ def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, ba
                     evidence_tolerance=0., **kwargs)
 
     # get number of iterations
-    ev = "{}ev.dat".format(basename)
-    with open(ev) as f:
-        n_iter = len(f.readlines())
+    ev_name = "{}ev.dat".format(basename)
+    with open(ev_name) as ev_file:
+        n_iter = len(ev_file.readlines())
 
     # get number of calls
-    res = "{}resume.dat".format(basename)
-    with open(res) as f:
-        line = f.readlines()[1]
+    res_name = "{}resume.dat".format(basename)
+    with open(res_name) as res_file:
+        line = res_file.readlines()[1]
     calls = int(line.split()[1])
 
     if not ev_data:
         return ns_result(n_iter, n_live, calls)
 
     # get ev data
-    ev_data = np.genfromtxt(ev)
-    ts = ev_data[:, -3]
-    log_x = -np.arange(0, len(ts), 1.) / n_live
+    ev_data = np.genfromtxt(ev_name)
+    test_statistic = ev_data[:, -3]
+    log_x = -np.arange(0, len(test_statistic), 1.) / n_live
     log_x_delta = np.sqrt(-log_x / n_live)
 
-    return ns_result(n_iter, n_live, calls), [ts, log_x, log_x_delta, loglike.thresholds, loglike.calls]
+    return ns_result(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta, loglike.thresholds, loglike.calls]
 
 def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, **kwargs):
     """
@@ -181,29 +181,32 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     # get number of calls directly
     calls = output.nlike
 
-    # my hack, new way is better ...
-    # logX = np.genfromtxt("chains/pc.logX")
+    # get log X from resume file
 
-    # get logX from resume file
-    res = "chains/{}.resume".format(file_root)
-    with open(res) as f:
-        lines = f.readlines()
-    check = lines[44].strip()
-    assert check == "=== local volume -- log(<X_p>) ===", check
-    data_str = lines[45].strip()
-    logXp = np.array([float(e) for e in data_str.split()])
-    logX = logsumexp(logXp)
+    label = "=== local volume -- log(<X_p>) ==="
+    log_xp = None
+    res_name = "chains/{}.resume".format(file_root)
 
-    n_iter = -logX * n_live
+    with open(res_name) as res_file:
+        for line in res_file:
+            if line.strip() == label:
+                next_line = res_file.readline()
+                log_xp = np.array([float(e) for e in next_line.split()])
+                break
+        else:
+            raise RuntimeError("didn't find {}".format(label))
+
+    log_x = logsumexp(log_xp)
+    n_iter = -log_x * n_live
 
     if not ev_data:
         return ns_result(n_iter, n_live, calls)
 
     # get ev data
-    ev = "chains/{}_dead.txt".format(file_root)
-    ev_data = np.genfromtxt(ev)
-    ts = ev_data[:, 0]
-    log_x = -np.arange(0, len(ts), 1.) / n_live
+    ev_name = "chains/{}_dead.txt".format(file_root)
+    ev_data = np.genfromtxt(ev_name)
+    test_statistic = ev_data[:, 0]
+    log_x = -np.arange(0, len(test_statistic), 1.) / n_live
     log_x_delta = np.sqrt(-log_x / n_live)
 
-    return ns_result(n_iter, n_live, calls), [ts, log_x, log_x_delta]
+    return ns_result(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta]
