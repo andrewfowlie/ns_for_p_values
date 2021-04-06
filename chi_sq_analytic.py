@@ -135,7 +135,7 @@ if __name__ == "__main__":
             py = []
 
             # Cannot resume NS run so one long run
-            p, ev_data = mn(test_statistic, transform, d, tmax, n_live=n_live, max_calls=1e3 / 0.3, sampling_efficiency=0.3, ev_data=True)
+            p, ev_data = mn(test_statistic, transform, d, tmax, n_live=int(n_live), max_calls=1e3 / 0.3, sampling_efficiency=0.3, ev_data=True)
 
             # extract number of calls
             thresholds = ev_data[-2]
