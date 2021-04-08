@@ -80,7 +80,7 @@ def wrapper_poisson(x, params):
     beta = x[4:]
     s = np.array([crystal_ball_signal(e, e+2.0, x[0], x[1], x[2], 2, x[3]) for e in bins])
     b = np.array([background_signal(e, e+2.0, beta) for e in bins])
-    spb = np.maximum(b,0)+s
+    spb = np.maximum(b,0) + s # Expectation value > 0
     lls = [poisson.logpmf(k=k, mu=mu) for (k,mu) in zip(data,spb)]
     return -2.0*sum(lls)
 
@@ -91,14 +91,14 @@ def wrapper_gaussian(x, params):
     beta = x[4:]
     s = np.array([crystal_ball_signal(e, e+2.0, x[0], x[1], x[2], 2, x[3]) for e in bins])
     b = np.array([background_signal(e, e+2.0, beta) for e in bins])
-    spb = np.maximum(b,0)+s
+    spb = np.maximum(b,0) + s # Expectation value > 0
     lls = [((k-mu)/e)**2 for (k,mu,e) in zip(data,spb,err)]
     return sum(lls)
 
 ### Extended analysis
 # Get the background expectation value from the best-fitting point (en lieu of theoretical prediction)
 beta = np.array([1.10031837e+01, 8.87953673e+00, 7.61866954e+00, 6.49040517e+00, 5.73566527e+00])
-expected_bkg = np.array([background_signal(e, e+2.0,beta) for e in bins])
+expected_bkg = np.array([background_signal(e, e+2.0, beta) for e in bins])
 
 def loglike_wrapper_spb(x, data):
     # For now: just use the Gaussian instead of the crystal
@@ -109,24 +109,47 @@ def loglike_wrapper_spb(x, data):
     return -2.0*sum(lls)
 
 def loglike_wrapper_bkg(x, data):
-    bkg = np.array([background_signal(e, e+2.0, x) for e in bins])
-    lls = [poisson.logpmf(k=k, mu=mu) for (k,mu) in zip(data,expected_bkg)]
+    bkg = np.maximum( np.array([background_signal(e, e+2.0, x) for e in bins]), 0 )
+    lls = [poisson.logpmf(k=k, mu=mu) for (k,mu) in zip(data,bkg)]
     return -2.0*sum(lls)
 
 bkg_bfg = [11., 8.8, 7.6, 6.5, 5.7]
-bkg_bounds = 5*[[0.,50.]]
-sig_bfg = [126, 2.5, 350]
-sig_bounds = [[105.,155.], [0.01,5.], [0.,1.0e4]]
+bkg_bounds = 5*[[-75.,75.]]
+sig_bfg = [126, 1.6, 100]
+sig_bounds = [[105.,155.], [1.0,6.0], [0.,1.0e4]]
 
-def calculate_ts(task_id, n_batch_size):
-    res = []
-    for i in range(n_batch_size):
-       data = poisson.rvs(expected_bkg)	
-       #res0 = minimize(loglike_wrapper_bkg, x0=bkg_bfg, bounds=bkg_bounds, args=data)
-       res0 = differential_evolution(loglike_wrapper_bkg, bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
-       ts0 = res0.fun
-       #res1 = minimize(loglike_wrapper_spb, x0=bkg_bfg+sig_bfg, bounds=bkg_bounds+sig_bounds, args=data)
-       res1 = differential_evolution(loglike_wrapper_spb, bounds=bkg_bounds+sig_bounds, args=(data,), popsize=25, tol=0.01)
-       ts1 = res1.fun
-       res.append( np.concatenate((res1.x, [ts0-ts1])) ) 
+def calculate_ts(task_id=0, n_batch_size=0):
+    data = poisson.rvs(expected_bkg)
+    res0 = minimize(loglike_wrapper_bkg, x0=bkg_bfg, bounds=bkg_bounds, args=data)
+    #res0 = differential_evolution(loglike_wrapper_bkg, bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
+    ts0 = res0.fun
+    res1 = minimize(loglike_wrapper_spb, x0=bkg_bfg+sig_bfg, bounds=bkg_bounds+sig_bounds, args=data)
+    #res1 = differential_evolution(loglike_wrapper_spb, bounds=bkg_bounds+sig_bounds, args=(data,), popsize=25, tol=0.01)
+    ts1 = res1.fun
+    res = np.concatenate((res1.x, [ts0-ts1]))
     return np.array(res)
+
+sigma_from_atlas = 3.9 / (2.0*np.sqrt(2.0*np.log(2.0)))
+red_sig_bfg = [126, 1.0]
+red_sig_bounds = [[105.,155.], [0.,500.]]
+
+def loglike_wrapper_red_spb(x, data):
+    sig = np.array([gaussian_signal(e, e+2.0, (x[5],sigma_from_atlas,x[6])) for e in bins])
+    bkg = np.array([background_signal(e, e+2.0, x[:5]) for e in bins])
+    spb = sig + np.maximum(bkg, 0)
+    lls = [poisson.logpmf(k=k, mu=mu) for (k,mu) in zip(data,spb)]
+    return -2.0*sum(lls)
+
+def loglike_wrapper_red_bkg(x, data):
+    bkg = np.maximum( np.array([background_signal(e, e+2.0, x) for e in bins]), 0 )
+    lls = [poisson.logpmf(k=k, mu=mu) for (k,mu) in zip(data,bkg)]
+    return -2.0*sum(lls)
+
+def nested_ts(data):
+    res0 = minimize(loglike_wrapper_red_bkg, x0=bkg_bfg, bounds=bkg_bounds, args=data)
+    # res0 = differential_evolution(loglike_wrapper_bkg, bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
+    ts0 = res0.fun
+    res1 = minimize(loglike_wrapper_red_spb, x0=bkg_bfg+red_sig_bfg, bounds=bkg_bounds+red_sig_bounds, args=data)
+    # res1 = differential_evolution(loglike_wrapper_spb, bounds=bkg_bounds+sig_bounds, args=(data,), popsize=25, tol=0.01)
+    ts1 = res1.fun
+    return ts0-ts1
