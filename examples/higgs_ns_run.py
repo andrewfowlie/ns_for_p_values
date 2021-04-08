@@ -14,7 +14,8 @@ n_dim_higgs = len(higgs.expected_bkg)
 def transform(cube):
     return poisson.ppf(cube, mu=higgs.expected_bkg)
 
-r1, r2 = ns.mn(higgs.nested_ts, transform, n_dim_higgs, targ, n_live=100, basename="chains/mn_1_", resume=False, ev_data=True)
+# r1, r2 = ns.mn(higgs.nested_ts, transform, n_dim_higgs, targ, n_live=100, basename="chains/mn_", resume=False, ev_data=True)
+r1, r2 = ns.pc(higgs.nested_ts, transform, n_dim_higgs, targ, n_live=100, file_root="pc_", feedback=2, resume=False, ev_data=True)
 
 plt.plot(r2[0], r2[1])
 plt.show()
