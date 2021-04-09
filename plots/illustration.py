@@ -8,10 +8,8 @@ from matplotlib import lines
 import numpy as np
 import scipy.stats
 
-import definitions
-
 np.random.seed(185)
-fig, ax = plt.subplots(1, 2, figsize=(6.8, 3.75), sharey=True)
+fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.75), sharey=True)
 
 # define model - chi-squared with particular number of dofs
 model = scipy.stats.chi2(3)
@@ -76,16 +74,16 @@ ax[0].text(0.74, 0.15,
            'critical value',
            fontsize=8, color="Crimson", horizontalalignment='center', verticalalignment='center', transform=ax[0].transAxes)
 
-ax[1].text(0.35, 0.62, 'At each iteration:',
+ax[1].text(0.275, 0.65, 'At each iteration:',
            fontsize=8, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
 
-ax[1].text(0.35, 0.56,
+ax[1].text(0.275, 0.59,
            ' $\\bullet$ threshold increases\n'
            ' $\\bullet$ draw from $\chi^2 >$ threshold\n'
            ' $\\bullet$ yellow area compresses by$\\approx\mathrm{e}^{-1 / n}$',
            fontsize=8, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
 
-arrow = mpatches.FancyArrowPatch((0.34, 0.605), (0.2, 0.465), mutation_scale=10, color="k", lw=0, zorder=15, transform=ax[1].transAxes)
+arrow = mpatches.FancyArrowPatch((0.26, 0.62), (0.2, 0.465), mutation_scale=10, color="k", lw=0, zorder=15, transform=ax[1].transAxes)
 ax[1].add_patch(arrow)
 
 ax[1].text(0.74, 0.15,
@@ -131,15 +129,15 @@ def add_vertical_line(handles, labels, label, color, width=1.5, height=8):
 handles, labels = ax[1].get_legend_handles_labels()
 add_vertical_line(handles, labels, "Threshold $\chi^2$", "goldenrod", 3, 12)
 add_vertical_line(handles, labels, "Critical $\chi^2$", "Crimson", 3, 12)
-ax[1].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5)
+ax[1].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=8)
 
 handles, labels = ax[0].get_legend_handles_labels()
 add_vertical_line(handles, labels, "50 random draws", "darkgrey")
 add_vertical_line(handles, labels, "Critical $\chi^2$", "Crimson", 3, 12)
-ax[0].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5)
+ax[0].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=8)
 
 ax[0].set_title("Monte Carlo")
 ax[1].set_title("Nested sampling")
 
-plt.tight_layout()
-plt.savefig("ill.pdf", backend='pgf')
+plt.tight_layout(pad=0.5, w_pad=2)
+plt.savefig("ill.pdf")
