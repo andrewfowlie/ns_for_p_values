@@ -30,15 +30,15 @@ def bernstein_basis(x, nu, k):
     xprime = (x - 100.) / 60.
     # Return with a scaling factor ~ O(observed counts)
     return 1.0e4 * binom(k, nu) * xprime**nu * (1. - xprime)**(k - nu)
-    
+
 def fixed_bernstein_basis(x, k):
     jj = np.concatenate([np.arange(nu + 1, k + 1) for nu in range(k)])
     basis = np.array([bernstein_basis(e, jj, k) / k for e in x])
-   
+
     basis_flat = np.zeros(shape=(len(x), k))
     for place, ii in enumerate(jj):
         basis_flat[:, ii - 1] += basis[:, place]
-    
+
     return basis_flat
 
 # Compute the basis once and for all at the bin edges
@@ -126,24 +126,24 @@ class loglike_wrapper_bkg(object):
         return -2. * self.logpmf(bkg)
 
 bkg_bfg = [11., 8.8, 7.6, 6.5, 5.7]
-bkg_bounds = 5*[[-75.,75.]]
+bkg_bounds = 5*[[0.,75.]]
 sig_bfg = [126, 1.6, 100]
-sig_bounds = [[105.,155.], [1.0,6.0], [0.,1.0e4]]
+sig_bounds = [[110.,150.], [1.0,6.0], [0.,1.0e4]]
+sigma_from_atlas = 3.9 / (2.0*np.sqrt(2.0*np.log(2.0)))
+red_sig_bfg = [126, 1.0]
+red_sig_bounds = [[110.,150.], [0.,500.]]
 
-def calculate_ts(task_id=0, n_batch_size=0):
+def calculate_ts():
     data = poisson.rvs(expected_bkg)
     res0 = minimize(loglike_wrapper_bkg(data), x0=bkg_bfg, bounds=bkg_bounds)
     #res0 = differential_evolution(loglike_wrapper_bkg, bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
     ts0 = res0.fun
-    res1 = minimize(loglike_wrapper_spb(data), x0=bkg_bfg+sig_bfg, bounds=bkg_bounds+sig_bounds)
-    #res1 = differential_evolution(loglike_wrapper_spb, bounds=bkg_bounds+sig_bounds, args=(data,), popsize=25, tol=0.01)
+    x0 = list(res0.x)+sig_bfg
+    # res1 = minimize(loglike_wrapper_spb(data), x0=x0, bounds=bkg_bounds+sig_bounds)
+    res1 = differential_evolution(loglike_wrapper_spb, bounds=bkg_bounds+sig_bounds, args=(data,), popsize=25, tol=0.01)
     ts1 = res1.fun
     res = np.concatenate((res1.x, [ts0-ts1]))
     return np.array(res)
-
-sigma_from_atlas = 3.9 / (2.0*np.sqrt(2.0*np.log(2.0)))
-red_sig_bfg = [126, 1.0]
-red_sig_bounds = [[105.,155.], [0.,500.]]
 
 class loglike_wrapper_red_spb(object):
     def __init__(self, data):
@@ -180,8 +180,8 @@ def nested_ts(data):
     res0 = minimize(loglike_wrapper_red_bkg(data), x0=bkg_bfg, bounds=bkg_bounds)
     # res0 = differential_evolution(loglike_wrapper_bkg, bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
     ts0 = res0.fun
-    
-    x0=bkg_bfg+red_sig_bfg
+
+    x0=list(res0.x)+red_sig_bfg
     x0[-2:] = guess_loc_scale(data)
     res1 = minimize(loglike_wrapper_red_spb(data), x0=x0, bounds=bkg_bounds+red_sig_bounds)
     # res1 = differential_evolution(loglike_wrapper_spb, bounds=bkg_bounds+sig_bounds, args=(data,), popsize=25, tol=0.01)
