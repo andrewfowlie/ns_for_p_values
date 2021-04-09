@@ -8,8 +8,10 @@ from matplotlib import lines
 import numpy as np
 import scipy.stats
 
+import definitions
+
 np.random.seed(185)
-fig, ax = plt.subplots(1, 2, figsize=(8, 4), sharey=True)
+fig, ax = plt.subplots(1, 2, figsize=(6.8, 3.75), sharey=True)
 
 # define model - chi-squared with particular number of dofs
 model = scipy.stats.chi2(3)
@@ -25,7 +27,7 @@ tail = chi2 > chi2_critical
 pdf = model.pdf(chi2)
 
 for a in ax:
-    a.set_xlabel("$\chi^2$")
+    a.set_xlabel("Test statistic $\chi^2$")
     a.set_xlim(0, 15)
     a.plot(chi2, pdf, color="RoyalBlue", lw=3)
     # shade tail region
@@ -33,7 +35,7 @@ for a in ax:
     # show critical
     a.vlines(chi2_critical, 0, model.pdf(chi2_critical), color="Crimson", lw=3)#, label="Critical $\chi^2$")
 
-ax[0].set_ylabel("$p(\chi^2)$")
+ax[0].set_ylabel(r"$\mathrm{PDF}(\chi^2)$")
 ax[0].set_ylim(0, None)
 ax[0].set_yticks([])
 
@@ -140,4 +142,4 @@ ax[0].set_title("Monte Carlo")
 ax[1].set_title("Nested sampling")
 
 plt.tight_layout()
-plt.savefig("ill.pdf")
+plt.savefig("ill.pdf", backend='pgf')
