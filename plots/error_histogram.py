@@ -40,17 +40,18 @@ mlp, stdlp = np.mean(lgp), np.std(lgp)
 # mn_zvals = [norm.isf(10**x) for x in lgp]
 mnev, stdnev = np.mean(nevals), np.std(nevals)
 merr = np.mean(lgp_err)
-expected = np.log10(chi2.sf(targ, df=nd))
-errfrommlp = (-expected/n_live)**0.5
+p_expected = chi2.sf(targ, df=nd)
+lgp_expected = np.log10(p_expected)
+errfrommlp = np.sqrt(-np.log(p_expected)/n_live)/np.log(10.0)
 
-print("log10(p) = {:.4f} +/- {:.4f} (avg MN error: {:.4f}); expected: {:.4f} +/- {:.4f}; mc: {:.4f} +/- {:.4f}.".format(mlp, stdlp, merr, expected, errfrommlp, lgp_mc, lgp_err_mc))
+print("log10(p) = {:.4f} +/- {:.4f} (avg MN error: {:.4f}); expected: {:.4f} +/- {:.4f}; mc: {:.4f} +/- {:.4f}.".format(mlp, stdlp, merr, lgp_expected, errfrommlp, lgp_mc, lgp_err_mc))
 print("Requires {:d} +/- {:d} functions evals.".format(int(mnev),int(stdnev)))
 
 lpvals = np.linspace(mlp-5*stdlp, mlp+5*stdlp, 150)
 # zvals = [norm.isf(10**x) for x in lpvals]
 bfgauss = norm.pdf(lpvals, loc=mlp, scale=stdlp)
 nominal = norm.pdf(lpvals, loc=mlp, scale=errfrommlp)
-theory = norm.pdf(lpvals, loc=expected, scale=errfrommlp)
+theory = norm.pdf(lpvals, loc=lgp_expected, scale=errfrommlp)
 
 
 
