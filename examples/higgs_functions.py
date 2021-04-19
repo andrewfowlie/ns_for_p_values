@@ -115,7 +115,7 @@ class loglike_wrapper_spb(object):
         sig = gaussian_signal(edges, mu, sigma, n_events)
         bkg = background_signal(beta)
         spb = sig + bkg
-        return -2. * self.logpmf(spb)
+        return -2. * np.maximum(self.logpmf(spb), -1.0e99)
 
 class loglike_wrapper_bkg(object):
     def __init__(self, data):
@@ -124,7 +124,7 @@ class loglike_wrapper_bkg(object):
     def __call__(self, x):
         beta = x[:5]
         bkg = background_signal(beta)
-        return -2. * self.logpmf(bkg)
+        return -2. * np.maximum(self.logpmf(bkg), -1.0e99)
 
 sigma_from_atlas = 3.9 / (2.0*np.sqrt(2.0*np.log(2.0)))
 bkg_bfg = [11., 8.8, 7.6, 6.5, 5.7]
@@ -156,7 +156,7 @@ class loglike_wrapper_red_spb(object):
         sig = gaussian_signal(edges, mu, sigma, n_events)
         bkg = background_signal(beta)
         spb = sig + bkg
-        return -2. * self.logpmf(spb)
+        return -2. * np.maximum(self.logpmf(spb), -1.0e99)
 
 class loglike_wrapper_red_bkg(object):
     def __init__(self, data):
@@ -165,7 +165,7 @@ class loglike_wrapper_red_bkg(object):
     def __call__(self, x):
         beta = x[:5]
         bkg = background_signal(x)
-        return -2. * self.logpmf(bkg)
+        return -2. * np.maximum(self.logpmf(bkg), -1.0e99)
 
 def guess_loc_scale(data):
     bkg = background_signal(bkg_bfg)
@@ -181,7 +181,7 @@ def nested_ts(data):
     rng = default_rng()
     # res0 = minimize(loglike_wrapper_red_bkg(data), x0=bkg_bfg, bounds=bkg_bounds)
     # res0 = differential_evolution(loglike_wrapper_red_bkg(data), bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
-    xinit0 = np.array(40*[bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in bkg_bounds] for i in range(160)]) 
+    xinit0 = np.array(40*[bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in bkg_bounds] for i in range(160)])
     res0 = differential_evolution(loglike_wrapper_red_bkg(data), bounds=bkg_bounds, init=xinit0, tol=0.0001)
     ts0 = res0.fun
     x0 = list(res0.x)+red_sig_bfg
