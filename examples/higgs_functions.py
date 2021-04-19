@@ -5,6 +5,7 @@ Fit Higgs to digamma data
 
 import os
 import numpy as np
+from numpy.random import default_rng
 from scipy.special import binom, erf, gammaln, xlogy
 from scipy.stats import poisson
 from scipy.optimize import differential_evolution, minimize
@@ -125,11 +126,11 @@ class loglike_wrapper_bkg(object):
         bkg = background_signal(beta)
         return -2. * self.logpmf(bkg)
 
+sigma_from_atlas = 3.9 / (2.0*np.sqrt(2.0*np.log(2.0)))
 bkg_bfg = [11., 8.8, 7.6, 6.5, 5.7]
 bkg_bounds = 5*[[0.,75.]]
-sig_bfg = [126, 1.6, 100]
-sig_bounds = [[110.,150.], [1.0,6.0], [0.,1.0e4]]
-sigma_from_atlas = 3.9 / (2.0*np.sqrt(2.0*np.log(2.0)))
+sig_bfg = [126, sigma_from_atlas, 1]
+sig_bounds = [[110.,150.], [1.0,6.0], [0.,1000.]]
 red_sig_bfg = [126, 1.0]
 red_sig_bounds = [[110.,150.], [0.,500.]]
 
@@ -177,13 +178,38 @@ def guess_loc_scale(data):
     return loc, scale
 
 def nested_ts(data):
-    res0 = minimize(loglike_wrapper_red_bkg(data), x0=bkg_bfg, bounds=bkg_bounds)
-    # res0 = differential_evolution(loglike_wrapper_bkg, bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
+    rng = default_rng()
+    # res0 = minimize(loglike_wrapper_red_bkg(data), x0=bkg_bfg, bounds=bkg_bounds)
+    # res0 = differential_evolution(loglike_wrapper_red_bkg(data), bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
+    xinit0 = np.array(40*[bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in bkg_bounds] for i in range(160)]) 
+    res0 = differential_evolution(loglike_wrapper_red_bkg(data), bounds=bkg_bounds, init=xinit0, tol=0.0001)
     ts0 = res0.fun
-
-    x0=list(res0.x)+red_sig_bfg
+    x0 = list(res0.x)+red_sig_bfg
     x0[-2:] = guess_loc_scale(data)
-    res1 = minimize(loglike_wrapper_red_spb(data), x0=x0, bounds=bkg_bounds+red_sig_bounds)
-    # res1 = differential_evolution(loglike_wrapper_spb, bounds=bkg_bounds+sig_bounds, args=(data,), popsize=25, tol=0.01)
+    x00 = x0
+    x00[-1] = 0.0
+    # res1 = minimize(loglike_wrapper_red_spb(data), x0=x0, bounds=bkg_bounds+red_sig_bounds)
+    # res1 = differential_evolution(loglike_wrapper_red_spb(data), bounds=bkg_bounds+red_sig_bounds, popsize=75, tol=0.005)
+    xlims = bkg_bounds+red_sig_bounds
+    xinit = np.array(40*[x0] + 40*[x00] + [[rng.uniform(x[0],x[1]) for x in xlims] for i in range(160)])
+    res1 = differential_evolution(loglike_wrapper_red_spb(data), bounds=xlims, init=xinit, tol=0.0001)
+    ts1 = res1.fun
+    return ts0-ts1
+
+def nested_ts_full(data):
+    rng = default_rng()
+    # res0 = minimize(loglike_wrapper_red_bkg(data), x0=bkg_bfg, bounds=bkg_bounds)
+    # res0 = differential_evolution(loglike_wrapper_red_bkg(data), bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
+    xinit0 = np.array(20*[bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in bkg_bounds] for i in range(130)])
+    res0 = differential_evolution(loglike_wrapper_red_bkg(data), bounds=bkg_bounds, init=xinit0, tol=0.001)
+    ts0 = res0.fun
+    x0 = list(res0.x)+sig_bfg
+    x00 = x0
+    x00[-1] = 0.0
+    # res1 = minimize(loglike_wrapper_red_spb(data), x0=x0, bounds=bkg_bounds+red_sig_bounds)
+    # res1 = differential_evolution(loglike_wrapper_red_spb(data), bounds=bkg_bounds+red_sig_bounds, popsize=75, tol=0.005)
+    xlims = bkg_bounds+sig_bounds
+    xinit = np.array(50*[x0] + 50*[x00] + [[rng.uniform(x[0],x[1]) for x in xlims] for i in range(100)])
+    res1 = differential_evolution(loglike_wrapper_red_spb(data), bounds=xlims, init=xinit, tol=0.001)
     ts1 = res1.fun
     return ts0-ts1

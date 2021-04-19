@@ -11,9 +11,8 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_dir+'/../examples/')
 
 import higgs_functions as higgs
-from nested_errors import get_mn_pval
 
-wrapper_mapping = { 'higgs': higgs.calculate_ts, 'mn_pvals': get_mn_pval }
+wrapper_mapping = { 'higgs': higgs.nested_ts, 'higgs_full': higgs.nested_ts_full }
 
 output_path = sys.argv[1]
 try:
@@ -29,11 +28,12 @@ def current_datetime():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def run_process_batch(index):
-    # res = np.array([wrapper_fun(rvs) for rvs in poisson.rvs(n_batch_size*[higgs.expected_bkg])])
-    res0 = wrapper_fun(index, n_batch_size)
-    out_file_name = output_path+'/temp/tsval_batch_{:d}.dat'.format(int(index))
+    res0 = np.array([wrapper_fun(data) for data in [poisson.rvs(higgs.expected_bkg) for i in range(n_batch_size)]])
+    # res0 = wrapper_fun(index, n_batch_size)
+    out_file_name = output_path+'/temp/tsval_{}_batch_{:d}.dat'.format(sys.argv[2],int(index))
     np.savetxt(out_file_name, res0, fmt='%.6e')
-    res1 = np.array(res0[:,-1])
+    #res1 = np.array(res0[:,-1])
+    res1 = np.array(res0)
     return res1
 
 
@@ -67,10 +67,10 @@ if (rank == 0):
         all_results = np.concatenate((all_results,buf))
         worker_id = info.Get_source()
         comm.send(task_id, dest=worker_id)
-        if ((task_id % 50 == 0)|(task_id==n_batches+ncores-1)):
-            print('Calculated another 50 batches of size {}. Currently at task id {}'.format(n_batch_size, task_id), flush=True)
+        if ((task_id % 500 == 0)|(task_id==n_batches+ncores-1)):
+            print('Calculated another 500 batches of size {}. Currently at task id {}'.format(n_batch_size, task_id), flush=True)
     print('{}: All MPI tasks finished after {:.1f} mins!'.format(current_datetime(), rank, (time.time()-start_time)/60.0), flush=True)
-    out_file_name = output_path+'/all_tsvals.dat'
+    out_file_name = output_path+'/all_tsvals_'+sys.argv[2]+'.dat'
     print('Formatting results and saving them to '+out_file_name+'.', flush=True)
     np.savetxt(out_file_name, all_results.T, fmt='%.6e')
     print('All tasks complete! Finishing MPI routine now...', flush=True)
