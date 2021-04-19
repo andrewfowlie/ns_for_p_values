@@ -1,17 +1,17 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-plt.rc('text', usetex=True)
-plt.rc('text.latex', preamble=r'\usepackage{lmodern}\usepackage[T1]{fontenc}\usepackage{amsmath}\usepackage{amssymb}\usepackage{siunitx}')
-plt.rc('pgf', texsystem='pdflatex', preamble=r'\usepackage{lmodern}\usepackage[T1]{fontenc}\usepackage{grffile}\DeclareUnicodeCharacter{2212}{-}\usepackage{amsmath}\usepackage{amssymb}\usepackage{siunitx}')
-plt.rc('font', **{'family':'serif','size':10})
-plt.rc('axes', labelsize=10)
-plt.rc('xtick', **{'labelsize':10, 'major.pad':5})
-plt.rc('ytick', **{'labelsize':10, 'major.pad':5})
-plt.rc('legend', **{'fontsize':8, 'title_fontsize':10})
-plt.rc('figure', titlesize=12)
-params = {'mathtext.default': 'regular'}
-plt.rcParams.update(params)
+def set_style():
+    plt.rc('text', usetex=True)
+    plt.rc('text.latex', preamble=r'\usepackage{lmodern}\usepackage[T1]{fontenc}\usepackage{amsmath}\usepackage{amssymb}\usepackage{siunitx}')
+    plt.rc('pgf', texsystem='pdflatex', preamble=r'\usepackage{lmodern}\usepackage[T1]{fontenc}\usepackage{grffile}\DeclareUnicodeCharacter{2212}{-}\usepackage{amsmath}\usepackage{amssymb}\usepackage{siunitx}')
+    plt.rc('font', **{'family':'serif','size':10})
+    plt.rc('axes', labelsize=10)
+    plt.rc('xtick', **{'labelsize':10, 'major.pad':5})
+    plt.rc('ytick', **{'labelsize':10, 'major.pad':5})
+    plt.rc('legend', **{'fontsize':8, 'title_fontsize':10})
+    plt.rc('figure', titlesize=12)
+    plt.rc('mathtext', default='regular')
 
 def log10_special_formatter(x, pos):
     res = "$10^{%g}$" % (x)
