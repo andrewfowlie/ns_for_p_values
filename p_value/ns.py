@@ -14,7 +14,7 @@ from pypolychord.settings import PolyChordSettings
 from result import Result
 
 
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 
 
 def ns_result(n_iter, n_live, calls):
@@ -135,6 +135,7 @@ def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, ba
                     dump_callback=dumper(3, observed),
                     outputfiles_basename=basename,
                     resume=resume,
+                    importance_nested_sampling=False,
                     sampling_efficiency=sampling_efficiency,
                     evidence_tolerance=0., **kwargs)
 
