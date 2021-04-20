@@ -11,7 +11,7 @@ import pymultinest
 import pypolychord
 from pypolychord.settings import PolyChordSettings
 
-from .result import Result
+from result import Result
 
 
 logging.getLogger().setLevel(logging.INFO)
@@ -125,7 +125,7 @@ def pc_wrap(test_statistic):
 
     return wrapped
 
-def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, basename="chains/mn_", resume=False, ev_data=False, **kwargs):
+def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, basename="chains/mn_", resume=False, ev_data=False, sampling_efficiency=0.3, **kwargs):
     """
     Nested sampling with MN
     """
@@ -135,6 +135,7 @@ def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, ba
                     dump_callback=dumper(3, observed),
                     outputfiles_basename=basename,
                     resume=resume,
+                    sampling_efficiency=sampling_efficiency,
                     evidence_tolerance=0., **kwargs)
 
     # get number of iterations
