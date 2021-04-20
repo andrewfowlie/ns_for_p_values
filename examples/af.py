@@ -5,27 +5,17 @@ Fit Higgs to digamma data
 
 import os
 import numpy as np
-from numpy.random import default_rng
-from scipy.special import binom, erf, xlogy
-from scipy.optimize import differential_evolution, minimize
+from scipy.special import binom, xlogy
+from scipy.optimize import minimize
 
 # Digitised data from Fig. 4 in [arXiv:1207.7214]
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 inv_mass, counts, err_counts = np.genfromtxt(script_dir+"/atlas_higgs_digamma_data.dat", unpack=True)
 edges = np.linspace(100, 160, num=31, endpoint=True)
-
-# Best-fit signals
-
+center = np.linspace(100, 160, num=30, endpoint=True)
+nbins = 30
 sigma_from_atlas = 3.9 / (2.0*np.sqrt(2.0*np.log(2.0)))
-bkg_bfg = [11., 8.8, 7.6, 6.5, 5.7]
-bkg_bounds = 5 * [[0., 75.]]
-sig_bfg = [126, 1.0]
-sig_bounds = [[110., 150.], [0., 500.]]
-bounds = np.array(bkg_bounds + sig_bounds)
-
-def ediff1d(x):
-    return x[1:] - x[:-1]
 
 # Functions for modelling background
 
@@ -48,28 +38,54 @@ def fixed_bernstein_basis(x, k):
 
     return basis_flat
 
-# Compute the basis once and for all at the bin edges
-bb = fixed_bernstein_basis(edges, 5)
+def fixed_bernstein_basis_ediff1d(x, k):
+    basis = fixed_bernstein_basis(x, k)
+    return np.maximum(basis[1:, :] - basis[:-1, :], 0.)
 
-def background_signal(beta):
-    bkg = np.matmul(bb, beta)
-    return np.maximum(ediff1d(bkg), 0.)
+# Compute the basis once and for all at the bin edges
+bb = fixed_bernstein_basis_ediff1d(edges, 5)
+
+class memoized_background_events(object):
+    def __init__(self):
+        self.cache = None
+        self.shape = None
+    def __call__(self, beta):
+        if not np.array_equal(beta[1:], self.cache):
+            self.cache = beta[1:]
+            self.shape = bb[:, 0] + np.matmul(bb[:, 1:], beta[1:])
+
+        return beta[0] * self.shape
+
+background_events = memoized_background_events()
 
 # Functions for modelling signal
 
-f = 0.5 / np.sqrt(2.0)
-edges_over_sigma = edges / sigma_from_atlas
+f = 2. / np.sqrt(2. * np.pi * sigma_from_atlas)
+center_over_sigma = center / sigma_from_atlas
 
-def gaussian_signal(mass, nevents):
-    z = edges_over_sigma - mass / sigma_from_atlas
-    erf_z = erf(z)
-    return f * nevents * ediff1d(erf_z)
+class memoized_gaussian_signal(object):
+    def __init__(self):
+        self.cache = {}
+    def __call__(self, x):
+
+        round_x = round(x[0], 2)
+
+        try:
+            shape = self.cache[round_x]
+        except KeyError:
+            z = center_over_sigma - round_x / sigma_from_atlas
+            shape = self.cache[round_x] = f * np.exp(-0.5 * z**2)
+
+        return x[1] * shape
+
+gaussian_signal = memoized_gaussian_signal()
 
 # Log-likelihoods
 
 # Get the background expectation value from the best-fitting point (en lieu of theoretical prediction)
-beta = np.array([1.10031837e+01, 8.87953673e+00, 7.61866954e+00, 6.49040517e+00, 5.73566527e+00])
-expected_bkg = background_signal(beta)
+bkg_expected = np.array([11.0031837, 0.80699704, 0.69240592, 0.58986611, 0.52127324])
+bkg_events = background_events(bkg_expected)
+bkg_events_sum = bkg_events.sum()
 
 def nan2num(x):
     if np.isinf(x) or np.isnan(x):
@@ -77,72 +93,93 @@ def nan2num(x):
     return x
 
 class loglike(object):
+    def __call__(self, x):
+        expected = self.events(x)
+        ll = xlogy(self.data, expected) - expected
+        return -2. * nan2num(ll.sum() - self.norm)
+
+class loglike_wrapper_fixed_bkg(loglike):
+    def __init__(self, bkg, data):
+        self.bkg = bkg
+        self.data = data
+        self.norm = (xlogy(self.data, self.data) - self.data).sum()
+
+    def events(self, x):
+        return self.bkg + gaussian_signal(x)
+
+class loglike_wrapper_spb(loglike):
     def __init__(self, data):
         self.data = data
         self.norm = (xlogy(self.data, self.data) - self.data).sum()
-    def logpmf(self, x):
-        ll = xlogy(self.data, x) - x
-        return nan2num(ll.sum() - self.norm)
 
-class loglike_wrapper_spb(loglike):
-    def __call__(self, x):
-        mass, n_events = x[5], x[6]
-        beta = x[:5]
-        sig = gaussian_signal(mass, n_events)
-        bkg = background_signal(beta)
-        spb = sig + bkg
-        return -2. * self.logpmf(spb)
+    @staticmethod
+    def events(x):
+        return background_events(x[:5]) + gaussian_signal(x[5:])
 
 class loglike_wrapper_bkg(loglike):
-    def __call__(self, x):
-        bkg = background_signal(x)
-        return -2. * self.logpmf(bkg)
+    def __init__(self, data):
+        self.data = data
+        self.norm = (xlogy(self.data, self.data) - self.data).sum()
 
-def guess_loc_scale(data, bkg):
-    d = data - bkg
-    chi = d / bkg**0.5
-    ii = chi.argmax()
-    loc = edges[ii] + 1.
-    scale = d[ii] / gaussian_signal(loc, 1.)[ii] 
-    return [loc, scale]
-    
+    @staticmethod
+    def events(x):
+        return background_events(x)
+
+signals = [gaussian_signal([c, 1]) for c in center]
+
+def guess_scale(ii, data, bkg):
+    d = data[ii] - bkg[ii]
+    scale = d / signals[ii][ii]
+    return max(0., scale)
+
+def signal_raster_fixed_bkg(data, beta, n=5):
+
+    bkg = background_events(beta)
+    best = None
+
+    chi = (data - bkg) / bkg**0.5
+    order = np.argsort(chi)
+
+    for ii in order[-n:]:
+        mass = center[ii]
+        scale = guess_scale(ii, data, bkg)
+
+        if scale == 0.:
+            continue
+
+        bounds = ((mass - 1., mass + 1.), (0., 2. * scale))
+        guess = (mass, scale)
+        local = minimize(loglike_wrapper_fixed_bkg(bkg, data), guess, bounds=bounds, method="Powell",
+                         options={'xtol': 1., 'ftol': 1e-4})
+
+        if best is None or local.fun < best.fun:
+            best = local
+
+    return best
+
 def nested_ts(data):
 
-    rng = default_rng()
+    tol = {'xatol': 1.,'fatol': 1e-5, 'adaptive': True}
+    bkg_guess = bkg_expected
+    bkg_guess[0] = data.sum() / bkg_events_sum
+    polished_0 = minimize(loglike_wrapper_bkg(data), bkg_guess, method="Nelder-Mead", options=tol)
+    bkg_fit = polished_0.x
 
-    polished_0 = minimize(loglike_wrapper_bkg(data), bkg_bfg, method="Nelder-Mead", options={'ftol': 1e-9})
-    ts0 = polished_0.fun
-    bkg = background_signal(polished_0.x)
-    
-    signal = list(polished_0.x) + guess_loc_scale(data, bkg)
-    no_signal = signal
-    no_signal[-1] = 0.
-    print(guess_loc_scale(data, bkg))
-    draws = rng.uniform(size=(160, 7)) * (bounds[:, 1] - bounds[:, 0]) + bounds[:, 0]
+    raster = signal_raster_fixed_bkg(data, bkg_fit)
+    guess = bkg_fit.tolist() + raster.x.tolist()
+    polished_1 = minimize(loglike_wrapper_spb(data), guess, method="Nelder-Mead", options=tol)
 
-    init = np.array(40 * [signal] + 40 * [no_signal] + draws.tolist())
-    de = differential_evolution(loglike_wrapper_spb(data), bounds=bounds, init=init, tol=0.0001)
-    polished_1 = minimize(loglike_wrapper_spb(data), de.x, method="Nelder-Mead", options={'ftol': 1e-9})
-    ts1 = polished_1.fun
-    
-    print(polished_0)
-    print(polished_1)
-    print(ts0, ts1)
-    print(ts0 - ts1)
-    
-    return ts0 - ts1
+    return polished_0.fun - polished_1.fun
 
-    
 if __name__ == "__main__":
     import time
-    b = beta * 1.2
-    b[3] *= 0.5
-    s = [115., 50.]
-    
+    b = bkg_expected
+    s = [112.45, 137.]
+
     t = time.time()
-    data = background_signal(b) + gaussian_signal(*s)
+    data = background_events(b) + gaussian_signal(s)
     r = nested_ts(data)
     t = time.time() - t
-    
+
     print("time", t)
-    print(b, s)
+    print(r, b, s)
