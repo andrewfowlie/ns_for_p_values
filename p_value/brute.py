@@ -3,7 +3,8 @@ P-value computation with brute force
 """
 
 import numpy as np
-from .result import Result
+from result import Result
+from tqdm import tqdm
 
 def brute_ts_vals(test_statistic, transform, n_dim, n=50000):
     """
@@ -11,7 +12,7 @@ def brute_ts_vals(test_statistic, transform, n_dim, n=50000):
     """
     cube = np.random.rand(n, n_dim)
     pseudo_data = transform(cube)
-    return np.array([test_statistic(pd) for pd in pseudo_data])
+    return np.array([test_statistic(pd) for pd in tqdm(pseudo_data)])
 
 
 def brute(test_statistic, transform, n_dim, observed, n=50000):
