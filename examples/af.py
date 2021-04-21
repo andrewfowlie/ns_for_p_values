@@ -8,7 +8,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 from scipy.special import binom, xlogy
-from scipy.optimize import minimize
+from scipy.optimize import minimize, minimize_scalar
 
 
 # Digitised data from Fig. 4 in [arXiv:1207.7214]
@@ -96,6 +96,8 @@ gaussian_signal = memoized_gaussian_signal()
 bkg_expected = np.array([5.77229940e+04, 9.16047899e-01, 5.40064675e-01, 3.97623250e-01, 8.61989197e-02])
 bkg_events = background_events(bkg_expected)
 bkg_events_sum = bkg_events.sum()
+bin_ii = 15
+signal_events = gaussian_signal((center[bin_ii], 1.))
 
 class loglike(metaclass=ABCMeta):
     def __init__(self, data):
@@ -119,6 +121,16 @@ class loglike_wrapper_fixed_bkg(loglike):
 
     def events(self, x):
         return self.bkg + gaussian_signal(x)
+        
+class loglike_wrapper_local(loglike):
+    def __init__(self, data, bkg, signal):
+        self.bkg = bkg
+        self.signal = signal
+        super().__init__(data)
+
+    def events(self, x):
+        return self.bkg + x * self.signal
+        
 
 class loglike_wrapper_spb(loglike):
     @staticmethod
@@ -137,13 +149,14 @@ def signal_raster_fixed_bkg(wrapper, data, bkg, n=5):
 
     best = None
 
-    chi = (data - bkg) / bkg**0.5
+    d = data - bkg
+    chi = d / bkg**0.5
     index = np.argpartition(chi, -n)[-n:]
-    scales = (data - bkg) / signals
+
 
     for ii in index:
         mass = center[ii]
-        scale = scales[ii]
+        scale = max(d[ii], d[ii - 1: ii + 2].sum())
 
         if scale <= 0.:
             continue
@@ -151,7 +164,7 @@ def signal_raster_fixed_bkg(wrapper, data, bkg, n=5):
         bounds = ((mass - 1., mass + 1.), (0., 2. * scale))
         guess = (mass, scale)
         local = minimize(wrapper, guess, bounds=bounds, method="Powell",
-                         options={'xtol': 1., 'ftol': 1e-4})
+                         options={'xtol': 1e-3, 'ftol': 1e-6})
 
         if best is None or local.fun < best.fun:
             best = local
@@ -161,9 +174,21 @@ def signal_raster_fixed_bkg(wrapper, data, bkg, n=5):
 def nested_ts(data):
     wrapper = loglike_wrapper_fixed_bkg(data, bkg_events)
     ts0 = wrapper((0., 0.))
-    raster = signal_raster_fixed_bkg(wrapper, data, bkg_events, 3)
+    raster = signal_raster_fixed_bkg(wrapper, data, bkg_events)
+
     return ts0 - raster.fun
-    
+   
+def nested_ts_local(data):
+    guess = (data - bkg_events)[bin_ii - 1: bin_ii + 2].sum()
+    if guess <= 0.:
+        return 0.
+
+    wrapper = loglike_wrapper_local(data, bkg_events, signal_events)
+    ts0 = wrapper(0.)
+    local = minimize_scalar(wrapper, bracket=(0., 2. * guess), options={'xtol': 1.48e-03, 'maxiter': np.inf})
+    print(local, guess)
+    return ts0 - local.fun  
+
 def nested_ts_bkg(data):
 
     tol = {'xatol': 1., 'fatol': 1e-5, 'adaptive': True}
@@ -187,11 +212,11 @@ def nested_ts_bkg(data):
 if __name__ == "__main__":
     import time
     b = bkg_expected
-    s = [112.45, 137.]
+    s = [center[bin_ii], 137.]
 
     t = time.time()
     observed = background_events(b) + gaussian_signal(s)
-    r = nested_ts_fixed_bkg(observed)
+    r = nested_ts(observed)
     t = time.time() - t
 
     print("time", t)
