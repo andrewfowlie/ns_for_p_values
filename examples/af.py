@@ -121,7 +121,7 @@ class loglike_wrapper_fixed_bkg(loglike):
 
     def events(self, x):
         return self.bkg + gaussian_signal(x)
-        
+
 class loglike_wrapper_local(loglike):
     def __init__(self, data, bkg, signal):
         self.bkg = bkg
@@ -130,7 +130,7 @@ class loglike_wrapper_local(loglike):
 
     def events(self, x):
         return self.bkg + x * self.signal
-        
+
 
 class loglike_wrapper_spb(loglike):
     @staticmethod
@@ -171,13 +171,13 @@ def signal_raster_fixed_bkg(wrapper, data, bkg, n=5):
 
     return best
 
-def nested_ts(data):
+def nested_ts_fixed_bkg(data):
     wrapper = loglike_wrapper_fixed_bkg(data, bkg_events)
     ts0 = wrapper((0., 0.))
     raster = signal_raster_fixed_bkg(wrapper, data, bkg_events)
 
     return ts0 - raster.fun
-   
+
 def nested_ts(data):
     d = data - bkg_events
     guess = max(d[bin_ii], d[bin_ii - 1: bin_ii + 2].sum())
@@ -187,12 +187,12 @@ def nested_ts(data):
     wrapper = loglike_wrapper_local(data, bkg_events, signal_events)
     ts0 = wrapper(0.)
     local = minimize_scalar(wrapper, bracket=(0., 2. * guess), options={'xtol': 1.48e-03, 'maxiter': np.inf})
-    return ts0 - local.fun  
+    return ts0 - local.fun
 
 def nested_ts_bkg(data):
 
     tol = {'xatol': 1., 'fatol': 1e-5, 'adaptive': True}
-    
+
     data_sum = data.sum()
     bkg_guess = np.array(bkg_expected)
     bkg_guess[0] = data_sum
