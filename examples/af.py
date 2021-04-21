@@ -178,15 +178,15 @@ def nested_ts(data):
 
     return ts0 - raster.fun
    
-def nested_ts_local(data):
-    guess = (data - bkg_events)[bin_ii - 1: bin_ii + 2].sum()
+def nested_ts(data):
+    d = data - bkg_events
+    guess = max(d[bin_ii], d[bin_ii - 1: bin_ii + 2].sum())
     if guess <= 0.:
         return 0.
 
     wrapper = loglike_wrapper_local(data, bkg_events, signal_events)
     ts0 = wrapper(0.)
     local = minimize_scalar(wrapper, bracket=(0., 2. * guess), options={'xtol': 1.48e-03, 'maxiter': np.inf})
-    print(local, guess)
     return ts0 - local.fun  
 
 def nested_ts_bkg(data):
