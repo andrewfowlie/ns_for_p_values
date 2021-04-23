@@ -237,3 +237,41 @@ def nested_ts_full(data):
     res1 = differential_evolution(loglike_wrapper_red_spb(data), bounds=xlims, init=xinit, tol=0.001)
     ts1 = res1.fun
     return ts0-ts1
+
+class loglike_wrapper_simple_spb(object):
+    def __init__(self, data):
+        gammaln_sum = gammaln(data + 1).sum()
+        self.logpmf = lambda x: logpmf(data, x, gammaln_sum)
+    def __call__(self, x):
+        mu, sigma, n_events = x[5], sigma_from_atlas, x[6]
+        beta = x[:5]
+        sig = gaussian_signal(edges, mu, sigma, n_events)
+        bkg = (x[0] + 1.0)*expected_bkg
+        spb = sig + bkg
+        return -2. * np.maximum(self.logpmf(spb), -1.0e99)
+
+class loglike_wrapper_simple_bkg(object):
+    def __init__(self, data):
+        gammaln_sum = gammaln(data + 1).sum()
+        self.logpmf = lambda x: logpmf(data, x, gammaln_sum)
+    def __call__(self, x):
+        bkg = (x[0] + 1.0)*expected_bkg
+        return -2. * np.maximum(self.logpmf(bkg), -1.0e99)
+
+simple_bkg_bfg = [0.0]
+simple_bkg_bounds = [[-0.5, 1.0]]
+
+def nested_ts_simple(data):
+    rng = default_rng()
+    xinit0 = np.array(10*[simple_bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in simple_bkg_bounds] for i in range(40)])
+    res0 = differential_evolution(loglike_wrapper_simple_bkg(data), bounds=bkg_bounds, init=xinit0, tol=0.0001)
+    ts0 = res0.fun
+    x0 = list(res0.x)+red_sig_bfg
+    x0[-2:] = guess_loc_scale(data)
+    x00 = np.copy(x0)
+    x00[-1] = 0.0
+    xlims = simple_bkg_bounds+red_sig_bounds
+    xinit = np.array(20*[x0] + 20*[x00] + [[rng.uniform(x[0],x[1]) for x in xlims] for i in range(110)])
+    res1 = differential_evolution(loglike_wrapper_simple_spb(data), bounds=xlims, init=xinit, tol=0.0001)
+    ts1 = res1.fun
+    return ts0-ts1
