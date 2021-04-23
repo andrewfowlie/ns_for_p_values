@@ -199,7 +199,7 @@ def nested_ts(data):
 class loglike_wrapper_minimal_spb(object):
     def __init__(self, data):
         gammaln_sum = gammaln(data + 1).sum()
-        bkg = background_signal(expected_beta)
+        self.bkg = background_signal(expected_beta)
         self.logpmf = lambda x: logpmf(data, x, gammaln_sum)
     def __call__(self, x):
         mu, sigma, n_events = x[0], sigma_from_atlas, x[1]
@@ -208,6 +208,7 @@ class loglike_wrapper_minimal_spb(object):
         return -2. * np.maximum(self.logpmf(spb), -1.0e99)
 
 def nested_ts_bkg(data):
+    rng = default_rng()
     llwrap = loglike_wrapper_red_bkg(data)
     ts0 = llwrap(expected_beta)
     x0 = guess_loc_scale(data)
