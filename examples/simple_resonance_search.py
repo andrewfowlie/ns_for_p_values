@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
-from scipy.special import logsumexp
+from scipy.special import logsumexp, ndtri
 from tqdm import tqdm
 
 sys.path.append("./..")
@@ -11,12 +11,17 @@ from p_value.ns import pc, ns_result
 
 
 def very_simple_ts(data):
-    return np.max(data**2)
+    return (data**2).max()
 
 def very_simple_transform(u):
-    return norm.ppf(u, loc=0, scale=1)
+    return ndtri(u)
 
 def three_bin_ts(data):
+    a, b, c = data[0:-2], data[1:-1], data[2:]
+    dt = 0.125 * (a**2 + 6. * a * b + 5. * b**2 + 2. * a * c + 6. * b * c + c**2)
+    return dt.max()
+
+def three_bin_ts_loop(data):
     n_bins = len(data)
     ts_0 = np.array([sum(data[cbin-1:cbin+2]**2) for cbin in range(1,n_bins-1)])
     ts_1 = []
