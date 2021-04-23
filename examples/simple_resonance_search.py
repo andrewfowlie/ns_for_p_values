@@ -8,6 +8,7 @@ from tqdm import tqdm
 sys.path.append("./..")
 sys.path.append("./../p_value")
 from p_value.ns import pc, ns_result
+from p_value.brute import brute_low_memory
 
 
 def very_simple_ts(data):
@@ -64,7 +65,8 @@ def analyse_pch(root="pc_simple", n_live=100):
 
     return res, test_statistic, log_x
 
-ts_vals_range = np.linspace(0,30,200)
+observed = 40.
+ts_vals_range = np.linspace(0, observed, 200)
 
 def calc_pvals(ts_vals):
     ts_sorted = np.sort(ts_vals)
@@ -79,35 +81,39 @@ def calc_pvals(ts_vals):
     pval_errs_range = np.array([np.sqrt(p/n_ts) for p in pvals_range])
     return pvals_range, pval_errs_range
 
+if __name__ == "__main__":
 
-# Brute MC
-n_samples = int(1e6)
-ts_vals = [very_simple_ts(norm.rvs(loc=0, scale=1, size=30)) for i in range(n_samples)]
-ts_vals_threebin = [three_bin_ts(norm.rvs(loc=0, scale=1, size=30)) for i in tqdm(range(n_samples))]
+    # Brute MC
+    n_samples = int(1e7)
+    #ts_vals = [very_simple_ts(norm.rvs(loc=0, scale=1, size=30)) for i in range(n_samples)]
+    #ts_vals_threebin = [three_bin_ts(norm.rvs(loc=0, scale=1, size=30)) for i in tqdm(range(n_samples))]
 
-# Polychord
-res1, res2 = pc(very_simple_ts, very_simple_transform, n_dim=30, observed=30, n_live=100, file_root="pc_simple", feedback=2, resume=False, ev_data=True)
-res1_3b, res2_3b = pc(three_bin_ts, very_simple_transform, n_dim=30, observed=30, n_live=100, file_root="pc_3bin", feedback=2, resume=False, ev_data=True)
+    b = brute_low_memory(very_simple_ts, very_simple_transform, 30, ts_vals_range, n=n_samples)
+    b_3b = brute_low_memory(three_bin_ts, very_simple_transform, 30, ts_vals_range, n=n_samples)
 
-p_vals_range, _ = calc_pvals(ts_vals)
-p_vals_threebin_range, _ = calc_pvals(ts_vals_threebin)
-res, test_statistic, log_x = analyse_pch()
-res_3b, test_statistic_3b, log_x_3b = analyse_pch("pc_3bin")
+    # Polychord
+    res1, res2 = pc(very_simple_ts, very_simple_transform, n_dim=30, observed=observed, n_live=100, file_root="pc_simple", feedback=2, resume=False, ev_data=True)
+    res1_3b, res2_3b = pc(three_bin_ts, very_simple_transform, n_dim=30, observed=observed, n_live=100, file_root="pc_3bin", feedback=2, resume=False, ev_data=True)
 
-plt.plot(ts_vals_range, np.log10(p_vals_range), c='grey', ls='--', label="Brute MC")
-plt.plot(test_statistic, np.log10(np.exp(log_x)), c='b', label="Polychord")
-plt.xlim([0,30])
-plt.xlabel('TS')
-plt.ylabel('$\log_{10}(p)$')
-plt.legend(title='1-bin example')
-plt.savefig("simple_ts_onebin.pdf")
-plt.show()
+    #p_vals_range, _ = calc_pvals(ts_vals)
+    #p_vals_threebin_range, _ = calc_pvals(ts_vals_threebin)
+    res, test_statistic, log_x = analyse_pch()
+    res_3b, test_statistic_3b, log_x_3b = analyse_pch("pc_3bin")
 
-plt.plot(ts_vals_range, np.log10(p_vals_threebin_range), c='grey', ls='--', label="Brute MC")
-plt.plot(test_statistic_3b, np.log10(np.exp(log_x_3b)), c='b', label="Polychord")
-plt.xlim([0,30])
-plt.xlabel('TS')
-plt.ylabel('$\log_{10}(p)$')
-plt.legend(title='3-bin example')
-plt.savefig("simple_ts_threebin.pdf", backend='pgf')
-plt.show()
+    plt.plot(ts_vals_range, np.log10(b), c='grey', ls='--', label="Brute MC")
+    plt.plot(test_statistic, np.log10(np.exp(log_x)), c='b', label="Polychord")
+    plt.xlim([0,observed])
+    plt.xlabel('TS')
+    plt.ylabel('$\log_{10}(p)$')
+    plt.legend(title='1-bin example')
+    plt.savefig("simple_ts_onebin.pdf")
+    plt.show()
+
+    plt.plot(ts_vals_range, np.log10(b_3b), c='grey', ls='--', label="Brute MC")
+    plt.plot(test_statistic_3b, np.log10(np.exp(log_x_3b)), c='b', label="Polychord")
+    plt.xlim([0,observed])
+    plt.xlabel('TS')
+    plt.ylabel('$\log_{10}(p)$')
+    plt.legend(title='3-bin example')
+    plt.savefig("simple_ts_threebin.pdf")
+    plt.show()

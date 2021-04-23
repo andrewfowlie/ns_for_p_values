@@ -31,12 +31,11 @@ def brute_low_memory(test_statistic, transform, n_dim, observed, n=50000):
     """
     Brute force MC sampling for p-value
     """
-    p_value = 0.
+    p_value = np.zeros_like(observed)
     for i in tqdm(range(n)):
         cube = np.random.rand(n_dim)
         pseudo_data = transform(cube)
         ts = test_statistic(pseudo_data)
-        p_value += float(ts > observed) / n
+        p_value[ts >= observed] += 1. / n
 
-    p_value_uncertainty = (p_value * (1. - p_value) / n)**0.5
-    return Result(p_value, p_value_uncertainty, n)
+    return p_value
