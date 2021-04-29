@@ -243,8 +243,7 @@ class loglike_wrapper_simple_spb(object):
         gammaln_sum = gammaln(data + 1).sum()
         self.logpmf = lambda x: logpmf(data, x, gammaln_sum)
     def __call__(self, x):
-        mu, sigma, n_events = x[5], sigma_from_atlas, x[6]
-        beta = x[:5]
+        mu, sigma, n_events = x[1], sigma_from_atlas, x[2]
         sig = gaussian_signal(edges, mu, sigma, n_events)
         bkg = (x[0] + 1.0)*expected_bkg
         spb = sig + bkg
@@ -264,7 +263,7 @@ simple_bkg_bounds = [[-0.5, 1.0]]
 def nested_ts_simple(data):
     rng = default_rng()
     xinit0 = np.array(10*[simple_bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in simple_bkg_bounds] for i in range(40)])
-    res0 = differential_evolution(loglike_wrapper_simple_bkg(data), bounds=bkg_bounds, init=xinit0, tol=0.0001)
+    res0 = differential_evolution(loglike_wrapper_simple_bkg(data), bounds=simple_bkg_bounds, init=xinit0, tol=0.0001)
     ts0 = res0.fun
     x0 = list(res0.x)+red_sig_bfg
     x0[-2:] = guess_loc_scale(data)
