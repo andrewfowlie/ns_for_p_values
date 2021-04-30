@@ -27,6 +27,23 @@ def ns_result(n_iter, n_live, calls):
     p_value_uncertainty = p_value * log_x_uncertainty
     return Result(p_value, p_value_uncertainty, calls)
 
+def analyze_mn_output(observed, root="chains/mn_", n_live=100):
+    ev_name = "{}ev.dat".format(root)
+    ev_data = np.genfromtxt(ev_name)
+    n_iter = len(ev_data[:,0])
+    # Only return valid TS values
+    cond = ev_data[:,-3] <= observed
+    test_statistic = ev_data[cond,-3]
+    log_x = -np.arange(0, len(test_statistic), 1.) / n_live
+    log_x_delta = np.sqrt(-log_x / n_live)
+
+    res_name = "{}resume.dat".format(root)
+    with open(res_name) as res_file:
+        line = res_file.readlines()[1]
+    calls = int(line.split()[1])
+
+    return ns_result(n_iter, n_live, calls), test_statistic, log_x, log_x_delta
+
 def log_convergence(threshold, observed):
     """
     Common dumper function
@@ -93,14 +110,16 @@ def mn_wrap_loglike(test_statistic, observed, max_calls):
             wrapped.threshold = threshold
             wrapped.thresholds.append(wrapped.threshold)
             wrapped.calls.append(wrapped.count)
-            logging.debug("threshold = {:.2f}. observed = {:.2f}. calls = {:.2f}. total = {:.2f}".format(threshold, observed, calls, wrapped.count))
-
+            if (wrapped.count > 1000*wrapped.counter):
+                logging.debug("threshold = {:.5f} (observed = {:.2f}), calls = {:d} (total = {:d})".format(threshold, observed, int(calls), int(wrapped.count)))
+                wrapped.counter += 1
         return t
 
     wrapped.max_calls_exceeded = False
     wrapped.threshold = -1e30
     wrapped.thresholds = [-1e30]
     wrapped.count = 0
+    wrapped.counter = 0
     wrapped.calls = [0]
     return wrapped
 
@@ -139,27 +158,12 @@ def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, ba
                     sampling_efficiency=sampling_efficiency,
                     evidence_tolerance=0., **kwargs)
 
-    # get number of iterations
-    ev_name = "{}ev.dat".format(basename)
-    with open(ev_name) as ev_file:
-        n_iter = len(ev_file.readlines())
-
-    # get number of calls
-    res_name = "{}resume.dat".format(basename)
-    with open(res_name) as res_file:
-        line = res_file.readlines()[1]
-    calls = int(line.split()[1])
+    res, test_statistic, log_x, log_x_delta = analyze_mn_output(observed, root=basename, n_live=n_live)
 
     if not ev_data:
-        return ns_result(n_iter, n_live, calls)
-
-    # get ev data
-    ev_data = np.genfromtxt(ev_name)
-    test_statistic = ev_data[:, -3]
-    log_x = -np.arange(0, len(test_statistic), 1.) / n_live
-    log_x_delta = np.sqrt(-log_x / n_live)
-
-    return ns_result(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta, loglike.thresholds, loglike.calls]
+        return res
+    else:
+        return res, [test_statistic, log_x, log_x_delta, loglike.thresholds, loglike.calls]
 
 def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, **kwargs):
     """
