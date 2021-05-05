@@ -131,8 +131,8 @@ bkg_bfg = [11., 8.8, 7.6, 6.5, 5.7]
 bkg_bounds = 5*[[0.,75.]]
 sig_bfg = [126, sigma_from_atlas, 1]
 sig_bounds = [[110.,150.], [1.0,6.0], [0.,1000.]]
-red_sig_bfg = [126, 1.0]
-red_sig_bounds = [[110.,150.], [0.,500.]]
+red_sig_bfg = [130, 10]
+red_sig_bounds = [[110.,150.], [0.,600.]]
 
 def calculate_ts():
     data = poisson.rvs(expected_bkg)
@@ -207,8 +207,9 @@ class loglike_wrapper_minimal_spb(object):
         spb = sig + self.bkg
         return -2. * np.maximum(self.logpmf(spb), -1.0e99)
 
+rng = default_rng()
+
 def nested_ts_bkg(data):
-    rng = default_rng()
     llwrap = loglike_wrapper_red_bkg(data)
     ts0 = llwrap(expected_beta)
     x0 = guess_loc_scale(data)
@@ -221,7 +222,6 @@ def nested_ts_bkg(data):
     return ts0-ts1
 
 def nested_ts_full(data):
-    rng = default_rng()
     # res0 = minimize(loglike_wrapper_red_bkg(data), x0=bkg_bfg, bounds=bkg_bounds)
     # res0 = differential_evolution(loglike_wrapper_red_bkg(data), bounds=bkg_bounds, args=(data,), popsize=25, tol=0.01)
     xinit0 = np.array(20*[bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in bkg_bounds] for i in range(130)])
@@ -258,10 +258,9 @@ class loglike_wrapper_simple_bkg(object):
         return -2. * np.maximum(self.logpmf(bkg), -1.0e99)
 
 simple_bkg_bfg = [0.0]
-simple_bkg_bounds = [[-0.5, 1.0]]
+simple_bkg_bounds = [[-0.3, 0.3]]
 
 def nested_ts_simple(data):
-    rng = default_rng()
     xinit0 = np.array(10*[simple_bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in simple_bkg_bounds] for i in range(40)])
     res0 = differential_evolution(loglike_wrapper_simple_bkg(data), bounds=simple_bkg_bounds, init=xinit0, tol=0.0001)
     ts0 = res0.fun
@@ -271,6 +270,19 @@ def nested_ts_simple(data):
     x00[-1] = 0.0
     xlims = simple_bkg_bounds+red_sig_bounds
     xinit = np.array(20*[x0] + 20*[x00] + [[rng.uniform(x[0],x[1]) for x in xlims] for i in range(110)])
+    res1 = differential_evolution(loglike_wrapper_simple_spb(data), bounds=xlims, init=xinit, tol=0.0001)
+    ts1 = res1.fun
+    return ts0-ts1
+
+def nested_ts_simple_fast(data):
+    res0 = minimize(loglike_wrapper_simple_bkg(data), x0=simple_bkg_bfg, bounds=simple_bkg_bounds)
+    ts0 = res0.fun
+    x0 = list(res0.x)+red_sig_bfg
+    x0[-2:] = guess_loc_scale(data)
+    x00 = np.copy(x0)
+    x00[-1] = 0.0
+    xlims = simple_bkg_bounds+red_sig_bounds
+    xinit = np.array(10*[x0] + 10*[x00] + [[rng.uniform(x[0],x[1]) for x in xlims] for i in range(80)])
     res1 = differential_evolution(loglike_wrapper_simple_spb(data), bounds=xlims, init=xinit, tol=0.0001)
     ts1 = res1.fun
     return ts0-ts1
