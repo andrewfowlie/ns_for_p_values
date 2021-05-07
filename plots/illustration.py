@@ -81,10 +81,14 @@ ax[1].text(0.27, 0.65, 'At each iteration:',
            fontsize=9, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
 
 ax[1].text(0.28, 0.59,
-           '\\raisebox{0.25ex}{\\tiny$\\bullet$} threshold increases\n'
-           '\\raisebox{0.25ex}{\\tiny$\\bullet$} draw from $\chi^2 >$ threshold\n'
-           '\\raisebox{0.25ex}{\\tiny$\\bullet$} yellow area compresses by $\\approx e^{-1 / n}$',
+           '\\textbullet threshold increases\n'
+           '\\textbullet draw from $\\chi^2 >$ threshold\n'
+           '\\textbullet yellow area compresses by $\\approx \\mathrm{e}^{-1 / n}$',
            fontsize=9, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
+
+#r'\raisebox{0.25ex}{\tiny$\bullet$} threshold increases\\'\
+#r'\raisebox{0.25ex}{\tiny$\bullet$} draw from $\chi^2 >$ threshold\\'\
+#r'\raisebox{0.25ex}{\tiny$\bullet$} yellow area compresses by $\approx \mathrm{e}^{-1 / n}$'
 
 arrow = mpatches.FancyArrowPatch((0.26, 0.62), (0.2, 0.465), mutation_scale=8, color="k", lw=0, zorder=15, transform=ax[1].transAxes)
 ax[1].add_patch(arrow)
@@ -143,4 +147,5 @@ ax[0].set_title("Monte Carlo", fontsize=10)
 ax[1].set_title("Nested sampling", fontsize=10)
 
 plt.tight_layout(pad=0.5, w_pad=2)
-plt.savefig("ill.pdf")
+#plt.savefig("ill.png")
+plt.savefig("ill.pdf", backend='pgf')

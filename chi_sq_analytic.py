@@ -65,35 +65,18 @@ if __name__ == "__main__":
             px = []
             py = []
 
-            # Running into OOM problems with multiple PCh resumes
-            p, ev_data = pc(test_statistic, transform, d, tmax, n_live=int(n_live), file_root='pc_d{:d}'.format(d), ev_data=True, resume=True, do_clustering=False)
-            thresholds = ev_data[-2]
-            calls = ev_data[-1]
+            for i, t in enumerate(np.geomspace(tmin, tmax, 20)):
 
-            for t, c in zip(thresholds, calls):
-                if t < tmin or t > tmax:
-                    continue
-
+                # Strategy is resume NS run, pushing threshold a bit further
+                p = pc(test_statistic, transform, d, t, n_live=int(n_live), resume=i != 0, do_clustering=False)
                 true_ = analytic_p_value(t, d)
 
                 ns_rel_error = (- np.log(true_.p_value) / n_live)**0.5
                 scale = (ns_rel_error / rel_error)**2
 
-                # showing true significance here - could show calculated one
+               # showing true significance here - could show calculated one
                 px.append(true_.significance)
-                py.append(c * scale)
-            ## for i, t in enumerate(np.geomspace(tmin, tmax, 20)):
-            ##
-            ##    # Strategy is resume NS run, pushing threshold a bit further
-            ##    p = pc(test_statistic, transform, d, t, n_live=int(n_live), resume=i != 0)
-            ##    true_ = analytic_p_value(t, d)
-            ##
-            ##    ns_rel_error = (- np.log(true_.p_value) / n_live)**0.5
-            ##    scale = (ns_rel_error / rel_error)**2
-            ##
-            ##    # showing true significance here - could show calculated one
-            ##    px.append(true_.significance)
-            ##    py.append(p.calls * scale)
+                py.append(p.calls * scale)
 
             with open(pkl_name, 'wb') as pkl:
                 pickle.dump((px, py), pkl)
