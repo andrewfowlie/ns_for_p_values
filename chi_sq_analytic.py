@@ -22,8 +22,7 @@ if __name__ == "__main__":
 
     rel_error = 0.1
     n_live = 100
-    #dims = [1, 2, 5, 10, 30]
-    dims = [1, 2]
+    dims = [1, 2, 5, 10, 30]
 
     # MC and perfect NS
 
@@ -69,13 +68,13 @@ if __name__ == "__main__":
             for i, t in enumerate(np.geomspace(tmin, tmax, 20)):
 
                 # Strategy is resume NS run, pushing threshold a bit further
-                p = pc(test_statistic, transform, d, t, n_live=int(n_live), resume=i != 0)
+                p = pc(test_statistic, transform, d, t, n_live=int(n_live), resume=i != 0, do_clustering=False)
                 true_ = analytic_p_value(t, d)
 
                 ns_rel_error = (- np.log(true_.p_value) / n_live)**0.5
                 scale = (ns_rel_error / rel_error)**2
 
-                # showing true significance here - could show calculated one
+               # showing true significance here - could show calculated one
                 px.append(true_.significance)
                 py.append(p.calls * scale)
 
@@ -97,7 +96,7 @@ if __name__ == "__main__":
             py = []
 
             # Cannot resume NS run so one long run
-            p, ev_data = mn(test_statistic, transform, d, tmax, n_live=int(n_live), max_calls=1e3/0.3, sampling_efficiency=0.3, ev_data=True)
+            p, ev_data = mn(test_statistic, transform, d, tmax, n_live=int(n_live), basename='chains/mn_d{:d}'.format(d), max_calls=int(1e3/0.3), sampling_efficiency=0.3, ev_data=True, multimodal=False)
 
             # extract number of calls
             thresholds = ev_data[-2]

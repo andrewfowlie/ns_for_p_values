@@ -1,15 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def set_style():
+def set_style(gs=10, lts=10, lfs=8, lbls=10, tls=10):
     plt.rc('text', usetex=True)
     plt.rc('text.latex', preamble=r'\usepackage{lmodern}\usepackage[T1]{fontenc}\usepackage{amsmath}\usepackage{amssymb}\usepackage{siunitx}')
     plt.rc('pgf', texsystem='pdflatex', preamble=r'\usepackage{lmodern}\usepackage[T1]{fontenc}\usepackage{grffile}\DeclareUnicodeCharacter{2212}{-}\usepackage{amsmath}\usepackage{amssymb}\usepackage{siunitx}')
-    plt.rc('font', **{'family':'serif','size':10})
-    plt.rc('axes', labelsize=10)
-    plt.rc('xtick', **{'labelsize':10, 'major.pad':5})
-    plt.rc('ytick', **{'labelsize':10, 'major.pad':5})
-    plt.rc('legend', **{'fontsize':8, 'title_fontsize':10})
+    plt.rc('font', **{'family':'serif','size': gs})
+    plt.rc('axes', labelsize=lbls)
+    plt.rc('xtick', **{'labelsize': tls, 'major.pad': 0.5*tls})
+    plt.rc('ytick', **{'labelsize': tls, 'major.pad': 0.5*tls})
+    plt.rc('legend', **{'fontsize': lfs, 'title_fontsize': lts})
     plt.rc('figure', titlesize=12)
     plt.rc('mathtext', default='regular')
 
@@ -18,6 +18,13 @@ def log10_special_formatter(x, pos):
     if np.abs(x) < 3:
         res = "$%g$" % (10.0**x)
     return res
+
+def pow10_formatter(x, pos):
+    lgx = int(np.log10(x))
+    if np.abs(lgx) < 3:
+        return "$%g$" % (x)
+    else:
+        return "$10^{%g}$" % (lgx)
 
 def set_axis_formatter(ax, axxrange=None, axyrange=None):
     formatter = plt.FuncFormatter(log10_special_formatter)

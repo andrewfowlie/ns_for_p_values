@@ -8,7 +8,10 @@ from matplotlib import lines
 import numpy as np
 import scipy.stats
 
+from definitions import set_style
+
 np.random.seed(185)
+set_style(gs=14)
 fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.75), sharey=True)
 
 # define model - chi-squared with particular number of dofs
@@ -69,28 +72,32 @@ for i in range(n):
 # annotations
 
 ax[0].text(0.74, 0.15,
-           'Tail area$\\approx$fraction of\n'
+           'Tail area $\\approx$ fraction of\n'
            'samples above\n'
            'critical value',
-           fontsize=8, color="Crimson", horizontalalignment='center', verticalalignment='center', transform=ax[0].transAxes)
+           fontsize=9, color="Crimson", horizontalalignment='center', verticalalignment='center', transform=ax[0].transAxes)
 
-ax[1].text(0.275, 0.65, 'At each iteration:',
-           fontsize=8, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
+ax[1].text(0.27, 0.65, 'At each iteration:',
+           fontsize=9, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
 
-ax[1].text(0.275, 0.59,
-           ' $\\bullet$ threshold increases\n'
-           ' $\\bullet$ draw from $\chi^2 >$ threshold\n'
-           ' $\\bullet$ yellow area compresses by$\\approx\mathrm{e}^{-1 / n}$',
-           fontsize=8, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
+ax[1].text(0.28, 0.59,
+           '\\textbullet threshold increases\n'
+           '\\textbullet draw from $\\chi^2 >$ threshold\n'
+           '\\textbullet yellow area compresses by $\\approx \\mathrm{e}^{-1 / n}$',
+           fontsize=9, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
 
-arrow = mpatches.FancyArrowPatch((0.26, 0.62), (0.2, 0.465), mutation_scale=10, color="k", lw=0, zorder=15, transform=ax[1].transAxes)
+#r'\raisebox{0.25ex}{\tiny$\bullet$} threshold increases\\'\
+#r'\raisebox{0.25ex}{\tiny$\bullet$} draw from $\chi^2 >$ threshold\\'\
+#r'\raisebox{0.25ex}{\tiny$\bullet$} yellow area compresses by $\approx \mathrm{e}^{-1 / n}$'
+
+arrow = mpatches.FancyArrowPatch((0.26, 0.62), (0.2, 0.465), mutation_scale=8, color="k", lw=0, zorder=15, transform=ax[1].transAxes)
 ax[1].add_patch(arrow)
 
 ax[1].text(0.74, 0.15,
-           'Tail area$\\approx$yellow area\n'
+           'Tail area $\\approx$ yellow area\n'
            'when threshold reaches\n'
            'critical value',
-           fontsize=8, color="Crimson", horizontalalignment='center', verticalalignment='center', transform=ax[1].transAxes)
+           fontsize=9, color="Crimson", horizontalalignment='center', verticalalignment='center', transform=ax[1].transAxes)
 
 # show random draws
 
@@ -114,7 +121,7 @@ while len(mc_draws) < 50:
 # finish up
 
 for a in ax:
-    # a.legend(fontsize=8)
+    # a.legend(fontsize=9)
     a.set_ylim(0, None)
 
 # custom legend markers
@@ -129,15 +136,16 @@ def add_vertical_line(handles, labels, label, color, width=1.5, height=8):
 handles, labels = ax[1].get_legend_handles_labels()
 add_vertical_line(handles, labels, "Threshold $\chi^2$", "goldenrod", 3, 12)
 add_vertical_line(handles, labels, "Critical $\chi^2$", "Crimson", 3, 12)
-ax[1].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=8)
+ax[1].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=9)
 
 handles, labels = ax[0].get_legend_handles_labels()
 add_vertical_line(handles, labels, "50 random draws", "darkgrey")
 add_vertical_line(handles, labels, "Critical $\chi^2$", "Crimson", 3, 12)
-ax[0].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=8)
+ax[0].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=9)
 
-ax[0].set_title("Monte Carlo")
-ax[1].set_title("Nested sampling")
+ax[0].set_title("Monte Carlo", fontsize=10)
+ax[1].set_title("Nested sampling", fontsize=10)
 
 plt.tight_layout(pad=0.5, w_pad=2)
-plt.savefig("ill.pdf")
+#plt.savefig("ill.png")
+plt.savefig("ill.pdf", backend='pgf')
