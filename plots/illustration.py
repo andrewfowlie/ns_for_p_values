@@ -67,6 +67,8 @@ add_vertical_line(handles, labels, "Critical "+ts_name, "Crimson", 3, 12)
 ax[0].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=9, borderaxespad=1)
 
 # Annotations
+custom_text_line(ax[0], 0.27, 0.74, "Evaluate "+ts_name+" for $n$ sets of\nrandomly generated pseudo-data")
+
 arrow = mpatches.FancyArrowPatch((1.7, 0.0325), (0.5, 0.01), mutation_scale=8, color=shade_of_grey, lw=0, zorder=15)
 ax[0].add_patch(arrow)
 arrow = mpatches.FancyArrowPatch((6.3, 0.0225), (9.35, 0.004), mutation_scale=8, color=shade_of_grey, lw=0, zorder=15, path_effects=outline(1.5))
