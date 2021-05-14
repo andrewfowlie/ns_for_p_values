@@ -84,7 +84,7 @@ ax[0].set_yscale('log')
 ax[0].tick_params(which='both', direction='in', bottom=True, top=False, left=True, right=True)
 ax[1].tick_params(which='both', direction='in', bottom=True, top=True, left=True, right=True)
 
-ax[1].xaxis.set_ticks(range(8))
+ax[1].xaxis.set_ticks(range(1,8))
 ax[1].xaxis.set_major_formatter(FormatStrFormatter('%.1d$\sigma$'))
 major_locator = plt.FixedLocator([10**float(p) for p in np.arange(-6,7,3)])
 minor_locator = plt.FixedLocator([10**float(p) for p in range(-5,10)])

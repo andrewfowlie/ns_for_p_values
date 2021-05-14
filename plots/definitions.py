@@ -26,15 +26,15 @@ def pow10_formatter(x, pos):
     else:
         return "$10^{%g}$" % (lgx)
 
-def set_axis_formatter(ax, axxrange=None, axyrange=None):
+def set_axis_formatter(ax, axxrange=[], axyrange=[]):
     formatter = plt.FuncFormatter(log10_special_formatter)
-    if (axxrange.any() != None):
+    if len(axxrange) > 0:
         major_locator = plt.FixedLocator(axxrange)
         minor_locator = plt.FixedLocator([i+j for i in np.log10(range(1,11)) for j in axxrange])
         ax.xaxis.set_major_locator(major_locator)
         ax.xaxis.set_minor_locator(minor_locator)
         ax.xaxis.set_major_formatter(formatter)
-    if (axyrange.any() != None):
+    if len(axyrange) > 0:
         major_locator = plt.FixedLocator(axyrange)
         minor_locator = plt.FixedLocator([i+j for i in np.log10(range(1,11)) for j in axyrange])
         ax.yaxis.set_major_locator(major_locator)
