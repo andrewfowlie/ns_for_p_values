@@ -50,8 +50,8 @@ if __name__ == "__main__":
 
         mc.append(1. / (rel_error**2 * r.p_value))
 
-        n_live = - np.log(r.p_value) / rel_error**2
-        calls = -n_live * np.log(r.p_value)
+        required_n_live = - np.log(r.p_value) / rel_error**2
+        calls = -required_n_live * np.log(r.p_value)
         pns.append(calls)
 
     mc = np.array(mc)
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
                 # Strategy is resume NS run, pushing threshold a bit further
                 p = pc(test_statistic, transform, d, t,
-                       n_live=int(n_live), resume=i != 0)
+                       n_live=n_live, resume=i != 0)
                 true_ = analytic_p_value(t, d)
 
                 ns_rel_error = (- np.log(true_.p_value) / n_live)**0.5
@@ -91,7 +91,6 @@ if __name__ == "__main__":
                 # showing true significance here - could show calculated one
                 px.append(true_.significance)
                 py.append(p.calls * scale)
-                print("significance = {}. calls = {}".format(px[-1], py[-1]))
 
             with open(pkl_name, 'wb') as pkl:
                 pickle.dump((px, py), pkl)
@@ -112,7 +111,7 @@ if __name__ == "__main__":
 
             # Cannot resume NS run so one long run
             p, ev_data = mn(test_statistic, transform, d, tmax,
-                            n_live=int(n_live), basename='chains/mn_d{:d}'.format(d),
+                            n_live=n_live, basename='chains/mn_d{:d}'.format(d),
                             ev_data=True)
 
             # extract number of calls
@@ -132,7 +131,6 @@ if __name__ == "__main__":
                 # showing true significance here - could show calculated one
                 px.append(true_.significance)
                 py.append(c * scale)
-                print("significance = {}. calls = {}".format(px[-1], py[-1]))
 
             with open(pkl_name, 'wb') as pkl:
                 pickle.dump((px, py), pkl)
