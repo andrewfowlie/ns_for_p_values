@@ -88,7 +88,7 @@ if __name__ == "__main__":
                 ns_rel_error = (- np.log(true_.p_value) / n_live)**0.5
                 scale = (ns_rel_error / rel_error)**2
 
-               # showing true significance here - could show calculated one
+                # showing true significance here - could show calculated one
                 px.append(true_.significance)
                 py.append(p.calls * scale)
                 print("significance = {}. calls = {}".format(px[-1], py[-1]))

@@ -38,31 +38,36 @@ ax[1].plot(x, mc / mc, c="grey")
 
 
 for d, l in zip(dims, ls_list):
-    pkl_name = "../examples/pkl/pc_dim_{}.pkl".format(d)
-    with open(pkl_name, 'rb') as pkl:
-        px, py = pickle.load(pkl)
+    try:
+        pkl_name = "../examples/pkl/pc_dim_{}.pkl".format(d)
+        with open(pkl_name, 'rb') as pkl:
+            px, py = pickle.load(pkl)
 
-    p = ax[0].plot(px, py, label=r"\textsc{{PolyChord}} ($d = {})$".format(d), ls=l, c='r')
-    pr = []
-    for t, c in zip(px, py):
-        p_value = norm.sf(t)
-        mc = 1. / (rel_error**2 * p_value)
-        pr.append(mc / c)
-    ax[1].plot(px, pr, ls=l, c=p[-1].get_color())
+        p = ax[0].plot(px, py, label=r"\textsc{{PolyChord}} ($d = {})$".format(d), ls=l, c='r')
+        pr = []
+        for t, c in zip(px, py):
+            p_value = norm.sf(t)
+            mc = 1. / (rel_error**2 * p_value)
+            pr.append(mc / c)
+        ax[1].plot(px, pr, ls=l, c=p[-1].get_color())
+    except IOError:
+        continue
 
 for d, l in zip(dims, ls_list):
-    pkl_name = "../examples/pkl/mn_dim_{}.pkl".format(d)
-    with open(pkl_name, 'rb') as pkl:
-        px, py = pickle.load(pkl)
+    try:
+        pkl_name = "../examples/pkl/mn_dim_{}.pkl".format(d)
+        with open(pkl_name, 'rb') as pkl:
+            px, py = pickle.load(pkl)
 
-    p = ax[0].plot(px, py, label=r"\textsc{{MultiNest}} ($d = {})$".format(d), ls=l, c='b')
-    pr = []
-    for t, c in zip(px, py):
-        p_value = norm.sf(t)
-        mc = 1. / (rel_error**2 * p_value)
-        pr.append(mc / c)
-    ax[1].plot(px, pr, ls=l, c=p[-1].get_color())
-
+        p = ax[0].plot(px, py, label=r"\textsc{{MultiNest}} ($d = {})$".format(d), ls=l, c='b')
+        pr = []
+        for t, c in zip(px, py):
+            p_value = norm.sf(t)
+            mc = 1. / (rel_error**2 * p_value)
+            pr.append(mc / c)
+        ax[1].plot(px, pr, ls=l, c=p[-1].get_color())
+    except IOError:
+        continue
 
 ax[0].axvline(5, lw=1, ls=':', c='k')
 ax[1].axvline(5, lw=1, ls=':', c='k')
