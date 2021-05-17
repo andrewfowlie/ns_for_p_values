@@ -208,18 +208,20 @@ def mn_new(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8
              safe_ts.threshold = threshold
              safe_ts.thresholds.append(safe_ts.threshold)
              safe_ts.calls.append(safe_ts.count)
-             if (safe_ts.count % 1000 == 0):
-                logging.debug("threshold = {:.5f}. observed = {:.2f}. calls = {:d}. total = {:d}".format(threshold, observed, int(calls), int(safe_ts.count)))
+             if (safe_ts.count > 1000*safe_ts.counter):
+                logging.debug("threshold = {:.5f} (observed = {:.2f}), calls = {:d} (total = {:d})".format(threshold, observed, int(calls), int(safe_ts.count)))
+                safe_ts.counter += 1
           return t
        except Exception as e:
           import sys
-          sys.stderr.write('ERROR in loglikelihood: %s\n' % e)
+          sys.stderr.write('ERROR in test statistic evaluation: %s\n' % e)
           sys.exit(1)
 
     safe_ts.max_calls_exceeded = False
     safe_ts.threshold = -1e30
     safe_ts.thresholds = [-1e30]
     safe_ts.count = 0
+    safe_ts.counter = 0
     safe_ts.calls = [0]
 
     run(safe_ts, safe_transform, n_dim,
@@ -250,9 +252,9 @@ def mn_new(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8
     log_x = -np.arange(0, len(test_statistic), 1.) / n_live
     log_x_delta = np.sqrt(-log_x / n_live)
 
-    return ns_result(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta, loglike.thresholds, loglike.calls]
+    return ns_result(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta, safe_ts.thresholds, safe_ts.calls]
 
-def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, **kwargs):
+def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, base_dir='chains/', **kwargs):
     """
     Nested sampling with PC
     """
@@ -261,6 +263,7 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     settings.nfail = n_live
     settings.precision_criterion = 0.
     settings.read_resume = resume
+    settings.base_dir = base_dir
     settings.file_root = file_root
     settings.nlive = n_live
     settings.feedback = feedback
@@ -278,7 +281,7 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
 
     label = "=== local volume -- log(<X_p>) ==="
     log_xp = None
-    res_name = "chains/{}.resume".format(file_root)
+    res_name = "{}/{}.resume".format(base_dir, file_root)
 
     with open(res_name) as res_file:
         for line in res_file:
@@ -296,7 +299,7 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
         return ns_result(n_iter, n_live, calls)
 
     # get ev data
-    ev_name = "chains/{}_dead.txt".format(file_root)
+    ev_name = "{}/{}_dead.txt".format(base_dir, file_root)
     ev_data = np.genfromtxt(ev_name)
     test_statistic = ev_data[:, 0]
     log_x = -np.arange(0, len(test_statistic), 1.) / n_live
