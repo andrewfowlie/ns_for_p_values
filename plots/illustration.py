@@ -1,18 +1,33 @@
 """
-Sketch of method.
+Sketch of NS and MC methods
+===========================
 """
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.patheffects as path_effects
 from matplotlib import lines
 import numpy as np
 import scipy.stats
 
 from definitions import set_style
 
+def vertical_line(color, width, height):
+    return lines.Line2D([], [], marker='|', linestyle='None', color=color, markersize=height, markeredgewidth=width)
+
+def add_vertical_line(handles, labels, label, color, width=1.5, height=9):
+    handles.append(vertical_line(color, width, height))
+    labels.append(label)
+
+def custom_text_line(axis, pos_x, pos_y, text):
+    axis.text(pos_x, pos_y,
+              text,
+              fontsize=9, horizontalalignment='left', verticalalignment='center', transform=axis.transAxes)
+
 np.random.seed(185)
 set_style(gs=14)
 fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.75), sharey=True)
+ts_name = "\\ensuremath{\\lambda}"
 
 # define model - chi-squared with particular number of dofs
 model = scipy.stats.chi2(3)
@@ -23,22 +38,56 @@ p_value = model.sf(chi2_critical)
 
 # plot pdf etc
 
-chi2 = np.linspace(0, 15, 10000)
+chi2 = np.linspace(0, 15, 200)
 tail = chi2 > chi2_critical
 pdf = model.pdf(chi2)
 
 for a in ax:
-    a.set_xlabel("Test statistic $\chi^2$")
-    a.set_xlim(0, 15)
     a.plot(chi2, pdf, color="RoyalBlue", lw=3)
     # shade tail region
-    a.fill_between(chi2, pdf, where=tail, color="Crimson", alpha=0.6, linewidth=0, zorder=-10)#, label="Desired tail area")
+    a.fill_between(chi2, pdf, where=tail, color="Crimson", alpha=0.4, linewidth=0, zorder=-10)#, label="Desired tail area")
     # show critical
     a.vlines(chi2_critical, 0, model.pdf(chi2_critical), color="Crimson", lw=3)#, label="Critical $\chi^2$")
+    a.set_xlabel("Test statistic "+ts_name)
+    a.set_xlim(0, 15)
+    a.set_ylim(0, None)
+    a.yaxis.set_ticks([])
+    a.yaxis.set_ticklabels([])
 
-ax[0].set_ylabel(r"$\mathrm{PDF}(\chi^2)$")
+# MC sampling
+shade_of_grey = 'grey'
+def outline(lw=2):
+    return [path_effects.Stroke(linewidth=lw, foreground='white'), path_effects.Normal()]
+mc_draws = model.rvs(size=50)
+for i, r in enumerate(mc_draws):
+    ax[0].axvline(r, ymax=0.03, color=shade_of_grey)#, path_effects=outline())#, label="50 random draws" if not i else None)
+
+handles, labels = ax[0].get_legend_handles_labels()
+# add_vertical_line(handles, labels, "50 random draws", "darkgrey")
+add_vertical_line(handles, labels, "Critical "+ts_name, "Crimson", 3, 12)
+ax[0].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=9, borderaxespad=1)
+
+# Annotations
+custom_text_line(ax[0], 0.27, 0.74, "Evaluate "+ts_name+" for $n$ sets of\nrandomly generated pseudo-data")
+
+arrow = mpatches.FancyArrowPatch((1.7, 0.0325), (0.5, 0.01), mutation_scale=8, color=shade_of_grey, lw=0, zorder=15)
+ax[0].add_patch(arrow)
+arrow = mpatches.FancyArrowPatch((6.3, 0.0225), (9.35, 0.004), mutation_scale=8, color=shade_of_grey, lw=0, zorder=15, path_effects=outline(1.5))
+ax[0].add_patch(arrow)
+ax[0].text(1.75, 0.03,
+           "Monte Carlo\nrandom samples",
+           fontsize=9, color=shade_of_grey, horizontalalignment='left', verticalalignment='center')
+
+ax[0].text(11.75, 0.035,
+           'Tail area $\\approx$\n'
+           'fraction of samples\n'
+           'above critical value',
+           fontsize=9, color="Crimson", horizontalalignment='center', verticalalignment='center')
+
 ax[0].set_ylim(0, None)
-ax[0].set_yticks([])
+ax[0].set_title("Monte Carlo", fontsize=10)
+ax[0].set_ylabel("$\\text{PDF}("+ts_name+")$")
+ax[0].tick_params(bottom=True, top=False, left=False, right=False)
 
 # show thresholds - make a list of them from uniform compression
 
@@ -69,43 +118,20 @@ for i in range(n):
                        color="Gold", linewidth=0, zorder=-5)#,
                        #label="We draw from $\chi^2 >$ threshold" if not i else None)
 
-# annotations
-
-ax[0].text(0.74, 0.15,
-           'Tail area $\\approx$ fraction of\n'
-           'samples above\n'
-           'critical value',
-           fontsize=9, color="Crimson", horizontalalignment='center', verticalalignment='center', transform=ax[0].transAxes)
-
-ax[1].text(0.27, 0.65, 'At each iteration:',
-           fontsize=9, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
-
-ax[1].text(0.28, 0.59,
-           '\\textbullet threshold increases\n'
-           '\\textbullet draw from $\\chi^2 >$ threshold\n'
-           '\\textbullet yellow area compresses by $\\approx \\mathrm{e}^{-1 / n}$',
-           fontsize=9, horizontalalignment='left', verticalalignment='top', transform=ax[1].transAxes)
-
-#r'\raisebox{0.25ex}{\tiny$\bullet$} threshold increases\\'\
-#r'\raisebox{0.25ex}{\tiny$\bullet$} draw from $\chi^2 >$ threshold\\'\
-#r'\raisebox{0.25ex}{\tiny$\bullet$} yellow area compresses by $\approx \mathrm{e}^{-1 / n}$'
-
-arrow = mpatches.FancyArrowPatch((0.26, 0.62), (0.2, 0.465), mutation_scale=8, color="k", lw=0, zorder=15, transform=ax[1].transAxes)
+# Annotations
+arrow = mpatches.FancyArrowPatch((0.2725, 0.72), (0.2, 0.465), mutation_scale=8, color="k", lw=0, zorder=15, transform=ax[1].transAxes)
 ax[1].add_patch(arrow)
+custom_text_line(ax[1], 0.27, 0.74, "At each iteration:")
+custom_text_line(ax[1], 0.28, 0.68, "\\textbullet threshold $"+ts_name+"^\\star$ increases")
+custom_text_line(ax[1], 0.28, 0.63, "\\textbullet draw from $"+ts_name+" > "+ts_name+"^\\star$")
+custom_text_line(ax[1], 0.28, 0.58, "\\textbullet area compresses by $\\sim \\mathrm{e}^{-1 / n_\\text{live}}$")
 
-ax[1].text(0.74, 0.15,
+
+ax[1].text(0.765, 0.125,
            'Tail area $\\approx$ yellow area\n'
            'when threshold reaches\n'
-           'critical value',
+           'critical '+ts_name,
            fontsize=9, color="Crimson", horizontalalignment='center', verticalalignment='center', transform=ax[1].transAxes)
-
-# show random draws
-
-# MC sampling
-
-mc_draws = model.rvs(size=50)
-for i, r in enumerate(mc_draws):
-    ax[0].axvline(r, ymax=0.03, color="darkgrey")#, label="50 random draws" if not i else None)
 
 # Nested sampling
 
@@ -115,35 +141,12 @@ while len(mc_draws) < 50:
     if r >= chi2_threshold[0]:
         mc_draws.append(r)
 
-# for i, r in enumerate(mc_draws):
-#     ax[1].axvline(r, ymax=0.03, color="black", label="50 random draws above threshold" if not i else None, zorder=100)
-
-# finish up
-
-for a in ax:
-    # a.legend(fontsize=9)
-    a.set_ylim(0, None)
-
-# custom legend markers
-
-def vertical_line(color, width, height):
-    return lines.Line2D([], [],  marker='|', linestyle='None', color=color, markersize=height, markeredgewidth=width)
-
-def add_vertical_line(handles, labels, label, color, width=1.5, height=8):
-    handles.append(vertical_line(color, width, height))
-    labels.append(label)
 
 handles, labels = ax[1].get_legend_handles_labels()
-add_vertical_line(handles, labels, "Threshold $\chi^2$", "goldenrod", 3, 12)
-add_vertical_line(handles, labels, "Critical $\chi^2$", "Crimson", 3, 12)
-ax[1].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=9)
+add_vertical_line(handles, labels, "Thresholds $"+ts_name+"^\\star$", "goldenrod", 3, 12)
+add_vertical_line(handles, labels, "Critical "+ts_name, "Crimson", 3, 12)
+ax[1].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=9, borderaxespad=1)
 
-handles, labels = ax[0].get_legend_handles_labels()
-add_vertical_line(handles, labels, "50 random draws", "darkgrey")
-add_vertical_line(handles, labels, "Critical $\chi^2$", "Crimson", 3, 12)
-ax[0].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=9)
-
-ax[0].set_title("Monte Carlo", fontsize=10)
 ax[1].set_title("Nested sampling", fontsize=10)
 
 plt.tight_layout(pad=0.5, w_pad=2)

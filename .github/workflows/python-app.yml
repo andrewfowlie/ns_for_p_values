@@ -1,0 +1,47 @@
+# This workflow will install Python dependencies and run tests with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python application
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install PC dependencies
+      run: |
+        sudo apt-get install gfortran libopenmpi-dev
+        pip install mpi4py
+    - name: Install MN dependencies
+      run: |
+        sudo apt-get install libblas{3,-dev} liblapack{3,-dev} libatlas{3-base,-base-dev} cmake build-essential git gfortran
+    - name: Install MN
+      run: |
+        git clone https://github.com/farhanferoz/MultiNest
+        cd MultiNest/MultiNest_v3.12_CMake/multinest
+        mkdir build
+        cd build
+        cmake ..
+        make
+        sudo make install
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Install PC
+      run: |
+        pip3 install git+https://github.com/andrewfowlie/PolyChordLite@hack_stopping # change if merged
+    - name: Test with unittest
+      run: |
+        cd test
+        export PYTHONPATH=../:../examples:${PYTHONPATH}
+        export LD_LIBRARY_PATH=/usr/local/lib/:${LD_LIBRARY_PATH}
+        python test.py

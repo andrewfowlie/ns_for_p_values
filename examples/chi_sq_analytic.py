@@ -1,3 +1,14 @@
+"""
+Make data for chi-squared analytic example
+==========================================
+
+The sampling distribution is a set of n_dim draws from a
+chi-squared distribution.
+
+The test-statistic is the sum of them, which has a chi^2_{n_dim}
+distribution.
+"""
+
 import pickle
 import numpy as np
 
@@ -22,7 +33,7 @@ if __name__ == "__main__":
 
     rel_error = 0.1
     n_live = 100
-    dims = [1, 2, 5, 10, 30]
+    dims = [1, 5, 30]
 
     # MC and perfect NS
 
@@ -45,7 +56,9 @@ if __name__ == "__main__":
 
     mc = np.array(mc)
     pns = np.array(pns)
-    pkl_name = "mc.pkl"
+
+    pkl_name = "pkl/mc.pkl"
+
     with open(pkl_name, 'wb') as pkl:
         pickle.dump((x, mc, pns), pkl)
 
@@ -53,7 +66,7 @@ if __name__ == "__main__":
 
     for d in dims:
 
-        pkl_name = "pc_dim_{}.pkl".format(d)
+        pkl_name = "pkl/pc_dim_{}.pkl".format(d)
 
         try:
             with open(pkl_name, 'rb') as pkl:
@@ -68,22 +81,24 @@ if __name__ == "__main__":
             for i, t in enumerate(np.geomspace(tmin, tmax, 20)):
 
                 # Strategy is resume NS run, pushing threshold a bit further
-                p = pc(test_statistic, transform, d, t, n_live=int(n_live), resume=i != 0, do_clustering=False)
+                p = pc(test_statistic, transform, d, t,
+                       n_live=int(n_live), resume=i != 0)
                 true_ = analytic_p_value(t, d)
 
                 ns_rel_error = (- np.log(true_.p_value) / n_live)**0.5
                 scale = (ns_rel_error / rel_error)**2
 
-               # showing true significance here - could show calculated one
+                # showing true significance here - could show calculated one
                 px.append(true_.significance)
                 py.append(p.calls * scale)
+                print("significance = {}. calls = {}".format(px[-1], py[-1]))
 
             with open(pkl_name, 'wb') as pkl:
                 pickle.dump((px, py), pkl)
 
     for d in dims:
 
-        pkl_name = "mn_dim_{}.pkl".format(d)
+        pkl_name = "pkl/mn_dim_{}.pkl".format(d)
 
         try:
             with open(pkl_name, 'rb') as pkl:
@@ -96,7 +111,9 @@ if __name__ == "__main__":
             py = []
 
             # Cannot resume NS run so one long run
-            p, ev_data = mn(test_statistic, transform, d, tmax, n_live=int(n_live), basename='chains/mn_d{:d}'.format(d), max_calls=int(1e3/0.3), sampling_efficiency=0.3, ev_data=True, multimodal=False)
+            p, ev_data = mn(test_statistic, transform, d, tmax,
+                            n_live=int(n_live), basename='chains/mn_d{:d}'.format(d),
+                            ev_data=True)
 
             # extract number of calls
             thresholds = ev_data[-2]
@@ -115,6 +132,7 @@ if __name__ == "__main__":
                 # showing true significance here - could show calculated one
                 px.append(true_.significance)
                 py.append(c * scale)
+                print("significance = {}. calls = {}".format(px[-1], py[-1]))
 
             with open(pkl_name, 'wb') as pkl:
                 pickle.dump((px, py), pkl)

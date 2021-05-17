@@ -9,12 +9,11 @@ from scipy.stats import poisson
 from mpi4py import MPI
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, script_dir+'/../examples/')
+sys.path.insert(0, script_dir)
 
 import higgs_functions as higgs
-import af
 
-wrapper_mapping = { 'higgs': higgs.nested_ts, 'higgs_full': higgs.nested_ts_full, 'higgs_af': af.nested_ts_bkg, 'higgs_af_fxbkg': af.nested_ts_fixed_bkg, 'higgs_fxbkg': higgs.nested_ts_bkg, 'higgs_sbkg': higgs.nested_ts_simple, 'higgs_fast': higgs.nested_ts_simple_fast }
+wrapper_mapping = { 'higgs': higgs.nested_ts, 'higgs_full': higgs.nested_ts_full, 'higgs_af_fxbkg': af.nested_ts_fixed_bkg, 'higgs_fxbkg': higgs.nested_ts_bkg, 'higgs_sbkg': higgs.nested_ts_simple, 'higgs_fast': higgs.nested_ts_simple_fast }
 
 output_path = sys.argv[1]
 try:

@@ -1,5 +1,6 @@
 """
-P-value computation with NS.
+P-value computation with NS via dynesty, PolyChord or MultiNest
+===============================================================
 """
 
 import logging
@@ -8,33 +9,22 @@ from scipy.special import logsumexp
 
 from dynesty import NestedSampler
 import pymultinest
-from pymultinest.run import run
 import pypolychord
 from pypolychord.settings import PolyChordSettings
 
-from result import Result
+from .result import Result
 
 
 logging.getLogger().setLevel(logging.DEBUG)
 
 
-def ns_result(n_iter, n_live, calls):
-    """
-    Results from NS run
-    """
-    log_x = - float(n_iter) / n_live
-    p_value = np.exp(log_x)
-    log_x_uncertainty = (-log_x / n_live)**0.5
-    p_value_uncertainty = p_value * log_x_uncertainty
-    return Result(p_value, p_value_uncertainty, calls)
-
 def analyze_mn_output(observed, root="chains/mn_", n_live=100):
     ev_name = "{}ev.dat".format(root)
     ev_data = np.genfromtxt(ev_name)
-    n_iter = len(ev_data[:,0])
+    n_iter = len(ev_data[:, 0])
     # Only return valid TS values
-    cond = ev_data[:,-3] <= observed
-    test_statistic = ev_data[cond,-3]
+    cond = ev_data[:, -3] <= observed
+    test_statistic = ev_data[cond, -3]
     log_x = -np.arange(0, len(test_statistic), 1.) / n_live
     log_x_delta = np.sqrt(-log_x / n_live)
 
@@ -43,7 +33,7 @@ def analyze_mn_output(observed, root="chains/mn_", n_live=100):
         line = res_file.readlines()[1]
     calls = int(line.split()[1])
 
-    return ns_result(n_iter, n_live, calls), test_statistic, log_x, log_x_delta
+    return Result.from_ns(n_iter, n_live, calls), test_statistic, log_x, log_x_delta
 
 def log_convergence(threshold, observed):
     """
@@ -72,7 +62,7 @@ def dynesty(test_statistic, transform, n_dim, observed, n_live=100, **kwargs):
 
     calls = sampler.results["ncall"].sum()
     n_iter = it + 1
-    return ns_result(n_iter, n_live, calls)
+    return Result.from_ns(n_iter, n_live, calls)
 
 def dumper(index, observed):
     """
@@ -111,8 +101,9 @@ def mn_wrap_loglike(test_statistic, observed, max_calls):
             wrapped.threshold = threshold
             wrapped.thresholds.append(wrapped.threshold)
             wrapped.calls.append(wrapped.count)
-            if (wrapped.count > 1000*wrapped.counter):
-                logging.debug("threshold = {:.5f} (observed = {:.2f}), calls = {:d} (total = {:d})".format(threshold, observed, int(calls), int(wrapped.count)))
+            if wrapped.count > 1000 * wrapped.counter:
+                logging.debug("threshold = {:.5f} (observed = {:.2f}), calls = {:d} (total = {:d})".format(
+                    threshold, observed, int(calls), int(wrapped.count)))
                 wrapped.counter += 1
         return t
 
@@ -145,7 +136,9 @@ def pc_wrap(test_statistic):
 
     return wrapped
 
-def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, basename="chains/mn_", resume=False, ev_data=False, sampling_efficiency=0.3, **kwargs):
+def mn(test_statistic, transform, n_dim, observed,
+       n_live=100, max_calls=1e8, basename="chains/mn_",
+       resume=False, ev_data=False, sampling_efficiency=0.3, **kwargs):
     """
     Nested sampling with MN
     """
@@ -163,9 +156,8 @@ def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, ba
 
     if not ev_data:
         return res
-    else:
-        return res, [test_statistic, log_x, log_x_delta, loglike.thresholds, loglike.calls]
 
+    return res, [test_statistic, log_x, log_x_delta, loglike.thresholds, loglike.calls]
 
 def mn_new(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, basename="chains/mn_", resume=False, ev_data=False, sampling_efficiency=0.3, **kwargs):
     """
@@ -266,8 +258,9 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     settings.base_dir = base_dir
     settings.file_root = file_root
     settings.nlive = n_live
-    settings.feedback = feedback
     settings.logLstop = observed
+    settings.do_clustering = False
+    settings.feedback = feedback
 
     loglike = pc_wrap(test_statistic)
     output = pypolychord.run_polychord(loglike,
@@ -296,7 +289,7 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     n_iter = -log_x * n_live
 
     if not ev_data:
-        return ns_result(n_iter, n_live, calls)
+        return Result.from_ns(n_iter, n_live, calls)
 
     # get ev data
     ev_name = "{}/{}_dead.txt".format(base_dir, file_root)
@@ -305,4 +298,4 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     log_x = -np.arange(0, len(test_statistic), 1.) / n_live
     log_x_delta = np.sqrt(-log_x / n_live)
 
-    return ns_result(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta]
+    return Result.from_ns(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta]
