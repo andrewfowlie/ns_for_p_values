@@ -12,7 +12,7 @@ import scipy.stats
 from definitions import set_style
 
 def vertical_line(color, width, height):
-    return lines.Line2D([], [],  marker='|', linestyle='None', color=color, markersize=height, markeredgewidth=width)
+    return lines.Line2D([], [], marker='|', linestyle='None', color=color, markersize=height, markeredgewidth=width)
 
 def add_vertical_line(handles, labels, label, color, width=1.5, height=9):
     handles.append(vertical_line(color, width, height))
@@ -20,8 +20,8 @@ def add_vertical_line(handles, labels, label, color, width=1.5, height=9):
 
 def custom_text_line(axis, pos_x, pos_y, text):
     axis.text(pos_x, pos_y,
-             text,
-             fontsize=9, horizontalalignment='left', verticalalignment='center', transform=axis.transAxes)
+              text,
+              fontsize=9, horizontalalignment='left', verticalalignment='center', transform=axis.transAxes)
 
 np.random.seed(185)
 set_style(gs=14)

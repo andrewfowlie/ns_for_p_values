@@ -3,7 +3,6 @@ Make data for chi-squared analytic example
 ==========================================
 """
 
-
 import pickle
 import numpy as np
 
@@ -51,7 +50,9 @@ if __name__ == "__main__":
 
     mc = np.array(mc)
     pns = np.array(pns)
-    pkl_name = "mc.pkl"
+
+    pkl_name = "pkl/mc.pkl"
+
     with open(pkl_name, 'wb') as pkl:
         pickle.dump((x, mc, pns), pkl)
 
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
     for d in dims:
 
-        pkl_name = "pc_dim_{}.pkl".format(d)
+        pkl_name = "pkl/pc_dim_{}.pkl".format(d)
 
         try:
             with open(pkl_name, 'rb') as pkl:
@@ -74,7 +75,8 @@ if __name__ == "__main__":
             for i, t in enumerate(np.geomspace(tmin, tmax, 20)):
 
                 # Strategy is resume NS run, pushing threshold a bit further
-                p = pc(test_statistic, transform, d, t, n_live=int(n_live), resume=i != 0, do_clustering=False)
+                p = pc(test_statistic, transform, d, t,
+                       n_live=int(n_live), resume=i != 0)
                 true_ = analytic_p_value(t, d)
 
                 ns_rel_error = (- np.log(true_.p_value) / n_live)**0.5
@@ -89,7 +91,7 @@ if __name__ == "__main__":
 
     for d in dims:
 
-        pkl_name = "mn_dim_{}.pkl".format(d)
+        pkl_name = "pkl/mn_dim_{}.pkl".format(d)
 
         try:
             with open(pkl_name, 'rb') as pkl:
@@ -102,7 +104,9 @@ if __name__ == "__main__":
             py = []
 
             # Cannot resume NS run so one long run
-            p, ev_data = mn(test_statistic, transform, d, tmax, n_live=int(n_live), basename='chains/mn_d{:d}'.format(d), max_calls=int(1e3/0.3), sampling_efficiency=0.3, ev_data=True, multimodal=False)
+            p, ev_data = mn(test_statistic, transform, d, tmax,
+                            n_live=int(n_live), basename='chains/mn_d{:d}'.format(d),
+                            sampling_efficiency=0.3, ev_data=True, multimodal=False)
 
             # extract number of calls
             thresholds = ev_data[-2]
