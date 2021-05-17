@@ -21,4 +21,13 @@ Contains analytic chi-squared examples and resonance search example.
 
 Contains code to reproduce figures from the paper.
 
+# Dependencies
 
+Tested in Python 3. Requires at least:
+
+- dynesty
+- pypolychord
+- pymultinest
+- scipy
+- numpy
+- matplotlib

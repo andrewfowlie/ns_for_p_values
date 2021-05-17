@@ -1,5 +1,6 @@
 """
-P-value computation with NS.
+P-value computation with NS via dynesty, PolyChord or MultiNest
+===============================================================
 """
 
 import logging
@@ -8,7 +9,6 @@ from scipy.special import logsumexp
 
 from dynesty import NestedSampler
 import pymultinest
-from pymultinest.run import run
 import pypolychord
 from pypolychord.settings import PolyChordSettings
 
@@ -31,10 +31,10 @@ def ns_result(n_iter, n_live, calls):
 def analyze_mn_output(observed, root="chains/mn_", n_live=100):
     ev_name = "{}ev.dat".format(root)
     ev_data = np.genfromtxt(ev_name)
-    n_iter = len(ev_data[:,0])
+    n_iter = len(ev_data[:, 0])
     # Only return valid TS values
-    cond = ev_data[:,-3] <= observed
-    test_statistic = ev_data[cond,-3]
+    cond = ev_data[:, -3] <= observed
+    test_statistic = ev_data[cond, -3]
     log_x = -np.arange(0, len(test_statistic), 1.) / n_live
     log_x_delta = np.sqrt(-log_x / n_live)
 
@@ -111,8 +111,9 @@ def mn_wrap_loglike(test_statistic, observed, max_calls):
             wrapped.threshold = threshold
             wrapped.thresholds.append(wrapped.threshold)
             wrapped.calls.append(wrapped.count)
-            if (wrapped.count > 1000*wrapped.counter):
-                logging.debug("threshold = {:.5f} (observed = {:.2f}), calls = {:d} (total = {:d})".format(threshold, observed, int(calls), int(wrapped.count)))
+            if wrapped.count > 1000 * wrapped.counter:
+                logging.debug("threshold = {:.5f} (observed = {:.2f}), calls = {:d} (total = {:d})".format(
+                    threshold, observed, int(calls), int(wrapped.count)))
                 wrapped.counter += 1
         return t
 
@@ -145,7 +146,9 @@ def pc_wrap(test_statistic):
 
     return wrapped
 
-def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, basename="chains/mn_", resume=False, ev_data=False, sampling_efficiency=0.3, **kwargs):
+def mn(test_statistic, transform, n_dim, observed,
+       n_live=100, max_calls=1e8, basename="chains/mn_",
+       resume=False, ev_data=False, sampling_efficiency=0.3, **kwargs):
     """
     Nested sampling with MN
     """
@@ -163,10 +166,12 @@ def mn(test_statistic, transform, n_dim, observed, n_live=100, max_calls=1e8, ba
 
     if not ev_data:
         return res
-    else:
-        return res, [test_statistic, log_x, log_x_delta, loglike.thresholds, loglike.calls]
 
-def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, **kwargs):
+    return res, [test_statistic, log_x, log_x_delta, loglike.thresholds, loglike.calls]
+
+def pc(test_statistic, transform, n_dim, observed,
+       n_live=100, file_root="pc_", feedback=0,
+       resume=False, ev_data=False, **kwargs):
     """
     Nested sampling with PC
     """
