@@ -2,6 +2,7 @@
 scipy
 numpy
 matplotlib
+tqdm
 
 # NS software
 dynesty
