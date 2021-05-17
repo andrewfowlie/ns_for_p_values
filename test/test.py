@@ -35,7 +35,7 @@ class TestNestedSampling(unittest.TestCase):
 
         a = analytic_p_value(observed, d)
         ns = mn(test_statistic, transform, d, observed, n_live=100, seed=87, sampling_efficiency=0.3)
-        print(ns, a)
+
         self.assertAlmostEqual(ns.log10_pvalue, a.log10_pvalue, delta=3. * ns.error_log10_pvalue)
 
     def test_pc_d_1(self):
