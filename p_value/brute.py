@@ -1,5 +1,6 @@
 """
 P-value computation with brute force
+====================================
 """
 
 import numpy as np

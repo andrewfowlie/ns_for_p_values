@@ -18,16 +18,6 @@ from .result import Result
 logging.getLogger().setLevel(logging.DEBUG)
 
 
-def ns_result(n_iter, n_live, calls):
-    """
-    Results from NS run
-    """
-    log_x = - float(n_iter) / n_live
-    p_value = np.exp(log_x)
-    log_x_uncertainty = (-log_x / n_live)**0.5
-    p_value_uncertainty = p_value * log_x_uncertainty
-    return Result(p_value, p_value_uncertainty, calls)
-
 def analyze_mn_output(observed, root="chains/mn_", n_live=100):
     ev_name = "{}ev.dat".format(root)
     ev_data = np.genfromtxt(ev_name)
@@ -43,7 +33,7 @@ def analyze_mn_output(observed, root="chains/mn_", n_live=100):
         line = res_file.readlines()[1]
     calls = int(line.split()[1])
 
-    return ns_result(n_iter, n_live, calls), test_statistic, log_x, log_x_delta
+    return Result.from_ns(n_iter, n_live, calls), test_statistic, log_x, log_x_delta
 
 def log_convergence(threshold, observed):
     """
@@ -72,7 +62,7 @@ def dynesty(test_statistic, transform, n_dim, observed, n_live=100, **kwargs):
 
     calls = sampler.results["ncall"].sum()
     n_iter = it + 1
-    return ns_result(n_iter, n_live, calls)
+    return Result.from_ns(n_iter, n_live, calls)
 
 def dumper(index, observed):
     """
@@ -213,7 +203,7 @@ def pc(test_statistic, transform, n_dim, observed,
     n_iter = -log_x * n_live
 
     if not ev_data:
-        return ns_result(n_iter, n_live, calls)
+        return Result.from_ns(n_iter, n_live, calls)
 
     # get ev data
     ev_name = "chains/{}_dead.txt".format(file_root)
@@ -222,4 +212,4 @@ def pc(test_statistic, transform, n_dim, observed,
     log_x = -np.arange(0, len(test_statistic), 1.) / n_live
     log_x_delta = np.sqrt(-log_x / n_live)
 
-    return ns_result(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta]
+    return Result.from_ns(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta]

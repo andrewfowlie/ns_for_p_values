@@ -1,6 +1,12 @@
 """
 Make data for chi-squared analytic example
 ==========================================
+
+The sampling distribution is a set of n_dim draws from a
+chi-squared distribution.
+
+The test-statistic is the sum of them, which has a chi^2_{n_dim}
+distribution.
 """
 
 import pickle

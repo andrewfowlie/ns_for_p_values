@@ -9,9 +9,11 @@ Contains methods for
 
 PolyChord requires the latest PolyChord version with the logLstopping condition.
 
-# test
+# Unit tests
 
-python3 test.py
+    cd test
+    export PYTHONPATH=../:../examples
+    python3 test.py
 
 # examples
 

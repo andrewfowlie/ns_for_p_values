@@ -1,5 +1,6 @@
 """
-Sketch of method.
+Sketch of NS and MC methods
+===========================
 """
 
 import matplotlib.pyplot as plt

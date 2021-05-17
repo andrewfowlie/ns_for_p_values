@@ -1,5 +1,6 @@
 """
-P-value computation elements
+Obhect for stroing and showing p-value result
+=============================================
 """
 
 import warnings
@@ -43,3 +44,14 @@ class Result(object):
 
         warnings.warn("p-value < 0. %s", self.p_value)
         return "p-value = {}".format(self.p_value)
+
+    @classmethod
+    def from_ns(cls, n_iter, n_live, calls):
+        """
+        Constructor for NS result.
+        """
+        log_x = - float(n_iter) / n_live
+        p_value = np.exp(log_x)
+        log_x_uncertainty = (-log_x / n_live)**0.5
+        p_value_uncertainty = p_value * log_x_uncertainty
+        return cls(p_value, p_value_uncertainty, calls)
