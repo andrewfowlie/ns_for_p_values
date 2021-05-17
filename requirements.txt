@@ -1,0 +1,9 @@
+# standard
+scipy
+numpy
+matplotlib
+
+# NS software
+dynesty
+pypolychord
+pymultinest
