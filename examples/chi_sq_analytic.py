@@ -112,7 +112,7 @@ if __name__ == "__main__":
             # Cannot resume NS run so one long run
             p, ev_data = mn(test_statistic, transform, d, tmax,
                             n_live=int(n_live), basename='chains/mn_d{:d}'.format(d),
-                            sampling_efficiency=0.3, ev_data=True, multimodal=False)
+                            ev_data=True)
 
             # extract number of calls
             thresholds = ev_data[-2]
