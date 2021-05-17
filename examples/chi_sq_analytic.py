@@ -91,6 +91,7 @@ if __name__ == "__main__":
                # showing true significance here - could show calculated one
                 px.append(true_.significance)
                 py.append(p.calls * scale)
+                print("significance = {}. calls = {}".format(px[-1], py[-1]))
 
             with open(pkl_name, 'wb') as pkl:
                 pickle.dump((px, py), pkl)
@@ -131,6 +132,7 @@ if __name__ == "__main__":
                 # showing true significance here - could show calculated one
                 px.append(true_.significance)
                 py.append(c * scale)
+                print("significance = {}. calls = {}".format(px[-1], py[-1]))
 
             with open(pkl_name, 'wb') as pkl:
                 pickle.dump((px, py), pkl)
