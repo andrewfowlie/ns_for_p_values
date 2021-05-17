@@ -1,49 +1,50 @@
-from p_value import mn, pc, brute
-from chi_sq_analytic import analytic_p_value, transform, test_statistic
+"""
+Unit-test p-value calculations
+==============================
+"""
 
 import unittest
+
+from p_value import mn, pc
+from chi_sq_analytic import analytic_p_value, transform, test_statistic
 
 
 class TestNestedSampling(unittest.TestCase):
 
-    def atest_ns_d_4(self):
+    def test_mn_d_4(self):
         d = 4
         observed = 16.25
-        
+
         a = analytic_p_value(observed, d)
-        ns = mn(test_statistic, transform, d, observed, n_live=1000, seed=87, sampling_efficiency=0.3)
-    
-        print(a, ns)
+        ns = mn(test_statistic, transform, d, observed, n_live=100, seed=87, sampling_efficiency=0.3)
+
         self.assertAlmostEqual(ns.log10_pvalue, a.log10_pvalue, delta=3. * ns.error_log10_pvalue)
 
-    def atest_pc_d_4(self):
+    def test_pc_d_4(self):
         d = 4
         observed = 16.25
-        
+
         a = analytic_p_value(observed, d)
-        ns = pc(test_statistic, transform, d, observed, n_live=1000, seed=87)
-    
-        print(a, ns)
+        ns = pc(test_statistic, transform, d, observed, n_live=100, seed=87)
+
         self.assertAlmostEqual(ns.log10_pvalue, a.log10_pvalue, delta=3. * ns.error_log10_pvalue)
 
-    def atest_ns_d_1(self):
+    def test_mn_d_1(self):
         d = 1
         observed = 4.
-        
+
         a = analytic_p_value(observed, d)
-        ns = mn(test_statistic, transform, d, observed, n_live=4000, seed=87, sampling_efficiency=0.3)
-    
-        print(a, ns)
+        ns = mn(test_statistic, transform, d, observed, n_live=100, seed=87, sampling_efficiency=0.3)
+        print(ns, a)
         self.assertAlmostEqual(ns.log10_pvalue, a.log10_pvalue, delta=3. * ns.error_log10_pvalue)
 
     def test_pc_d_1(self):
         d = 1
         observed = 4.
-        
+
         a = analytic_p_value(observed, d)
-        ns = pc(test_statistic, transform, d, observed, n_live=4000, num_repeats=10)
-    
-        print(a, ns)
+        ns = pc(test_statistic, transform, d, observed, n_live=100, num_repeats=3, seed=87)
+
         self.assertAlmostEqual(ns.log10_pvalue, a.log10_pvalue, delta=3. * ns.error_log10_pvalue)
 
 if __name__ == '__main__':

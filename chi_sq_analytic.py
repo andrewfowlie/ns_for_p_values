@@ -1,3 +1,9 @@
+"""
+Make data for chi-squared analytic example
+==========================================
+"""
+
+
 import pickle
 import numpy as np
 

@@ -3,7 +3,7 @@ P-value computation with brute force
 """
 
 import numpy as np
-from result import Result
+from .result import Result
 from tqdm import tqdm
 
 def brute_ts_vals(test_statistic, transform, n_dim, n=50000):
