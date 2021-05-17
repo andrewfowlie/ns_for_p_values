@@ -5,5 +5,5 @@ matplotlib
 
 # NS software
 dynesty
-pypolychord
+# pypolychord
 pymultinest
