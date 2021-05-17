@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     rel_error = 0.1
     n_live = 100
-    dims = [1, 2, 5, 10, 30]
+    dims = [1, 5, 30]
 
     # MC and perfect NS
 
