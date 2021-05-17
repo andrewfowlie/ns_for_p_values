@@ -40,5 +40,6 @@ jobs:
     - name: Test with unittest
       run: |
         cd test
-        export PYTHONPATH=../:../examples
+        export PYTHONPATH=../:../examples:${PYTHONPATH}
+        export LD_LIBRARY_PATH=/usr/local/lib/:${LD_LIBRARY_PATH}
         python test.py
