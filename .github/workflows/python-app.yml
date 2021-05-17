@@ -19,8 +19,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip3 install git+https://github.com/andrewfowlie/PolyChordLite@hack_stopping # change if merged
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip3 install git+https://github.com/andrewfowlie/PolyChordLite@hack_stopping # change if merged
     - name: Test with unittest
       run: |
         cd test
