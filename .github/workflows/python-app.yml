@@ -20,7 +20,7 @@ jobs:
       run: sudo apt-get install gfortran libopenmpi-dev
     - name: Install MN dependencies
       run: |
-        sudo apt-get install libblas{3,-dev} liblapack{3,-dev} libatlas{3-base,-dev} cmake build-essential git gfortran
+        sudo apt-get install libblas{3,-dev} liblapack{3,-dev} libatlas{3-base,base-dev} cmake build-essential git gfortran
     - name: Install MN
       run: |
         git clone https://github.com/farhanferoz/MultiNest
