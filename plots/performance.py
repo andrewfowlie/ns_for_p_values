@@ -1,6 +1,8 @@
 """
 Plot significance against calls for MN and PC
 =============================================
+
+Requires data saved as pikcles.
 """
 
 import pickle
@@ -26,7 +28,7 @@ gs = gridspec.GridSpec(2, 1, hspace=0., height_ratios=[3., 1.])
 ax0 = plt.subplot(gs[0])
 ax = [ax0, plt.subplot(gs[1], sharex=ax0)]
 
-with open("../mc.pkl", 'rb') as pkl:
+with open("../examples/pkl/mc.pkl", 'rb') as pkl:
     x, mc, pns = pickle.load(pkl)
 
 ax[0].plot(x, mc, label="Monte Carlo", c="grey")
@@ -36,7 +38,7 @@ ax[1].plot(x, mc / mc, c="grey")
 
 
 for d, l in zip(dims, ls_list):
-    pkl_name = "../pc_dim_{}.pkl".format(d)
+    pkl_name = "../examples/pkl/pc_dim_{}.pkl".format(d)
     with open(pkl_name, 'rb') as pkl:
         px, py = pickle.load(pkl)
 
@@ -49,7 +51,7 @@ for d, l in zip(dims, ls_list):
     ax[1].plot(px, pr, ls=l, c=p[-1].get_color())
 
 for d, l in zip(dims, ls_list):
-    pkl_name = "../mn_dim_{}.pkl".format(d)
+    pkl_name = "../examples/pkl/mn_dim_{}.pkl".format(d)
     with open(pkl_name, 'rb') as pkl:
         px, py = pickle.load(pkl)
 
