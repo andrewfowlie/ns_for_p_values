@@ -17,7 +17,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install PC dependencies
-      run: sudo apt-get install gfortran libopenmpi-dev
+      run: |
+        sudo apt-get install gfortran libopenmpi-dev
+        pip install mpi4py
     - name: Install MN dependencies
       run: |
         sudo apt-get install libblas{3,-dev} liblapack{3,-dev} libatlas{3-base,-base-dev} cmake build-essential git gfortran
