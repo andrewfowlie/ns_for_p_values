@@ -4,16 +4,16 @@ import time
 from datetime import datetime
 
 import numpy as np
+import h5py as h5
 from scipy.stats import poisson
 from mpi4py import MPI
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, script_dir+'/../examples/')
+sys.path.insert(0, script_dir)
 
 import higgs_functions as higgs
-import af
 
-wrapper_mapping = { 'higgs': higgs.nested_ts, 'higgs_full': higgs.nested_ts_full, 'higgs_af': af.nested_ts_bkg, 'higgs_af_fxbkg': af.nested_ts_fixed_bkg, 'higgs_fxbkg': higgs.nested_ts_bkg, 'higgs_sbkg': higgs.nested_ts_simple, 'higgs_fast': higgs.nested_ts_simple_fast }
+wrapper_mapping = { 'higgs': higgs.nested_ts, 'higgs_full': higgs.nested_ts_full, 'higgs_af_fxbkg': af.nested_ts_fixed_bkg, 'higgs_fxbkg': higgs.nested_ts_bkg, 'higgs_sbkg': higgs.nested_ts_simple, 'higgs_fast': higgs.nested_ts_simple_fast }
 
 output_path = sys.argv[1]
 try:
@@ -25,6 +25,7 @@ n_batch_size = int(sys.argv[3])
 n_batches = int(sys.argv[4])
 five_percent_batch = int(0.05*n_batches)
 n_tasks = n_batch_size*n_batches
+run_nr = str(sys.argv[5])
 
 def current_datetime():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -74,8 +75,11 @@ if (rank == 0):
             out_file_name = output_path+'/temp/tsval_{}_batch_{:d}.dat'.format(sys.argv[2],int(task_id/five_percent_batch))
             np.savetxt(out_file_name, all_results[-five_percent_batch*n_batch_size:].T, fmt='%.6e')
     print('{}: All MPI tasks finished after {:.1f} mins!'.format(current_datetime(), rank, (time.time()-start_time)/60.0), flush=True)
-    out_file_name = output_path+'/run5_tsvals_'+sys.argv[2]+'.dat'
+    out_file_name = output_path+'/run'+run_nr+'_tsvals_'+sys.argv[2]+'.dat'
+    out_file_name_h5 = output_path+'/run'+run_nr+'_tsvals_'+sys.argv[2]+'.hdf5'
     print('Formatting results and saving them to '+out_file_name+'.', flush=True)
     np.savetxt(out_file_name, all_results.T, fmt='%.6e')
+    with h5.File(out_file_name_h5, 'w') as f:
+        f.create_dataset("ts_vals", data=all_results)
     print('All tasks complete! Finishing MPI routine now...', flush=True)
     MPI.Finalize()

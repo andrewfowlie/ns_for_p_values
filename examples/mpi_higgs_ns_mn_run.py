@@ -1,10 +1,12 @@
 import sys
+import os
 import numpy as np
 
 from scipy.stats import poisson
 
-sys.path.append("/usr/users/hoof1/ns_for_p_values/p_value")
-sys.path.append("/usr/users/hoof1/ns_for_p_values/examples")
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, script_dir+'/../examples/')
+sys.path.insert(0, script_dir+'/../p_value/')
 import higgs_functions as higgs
 from ns import mn
 
