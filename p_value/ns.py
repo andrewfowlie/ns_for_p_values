@@ -179,7 +179,39 @@ def mn(test_statistic, transform, n_dim, observed,
 
     return Result.from_ns(n_iter, n_live, calls), [test_statistic, log_x, log_x_delta, mn_wrap_loglike.thresholds, mn_wrap_loglike.calls]
 
-def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, base_dir='chains/', **kwargs):
+def get_line(file, label):
+    with open(file) as res_file:
+        for line in res_file:
+            if line.strip() == label:
+                next_line = res_file.readline()
+                return np.array([float(e) for e in next_line.split()])
+        else:
+            raise RuntimeError("Did not find the line '{}'".format(label))
+
+def analyse_pc_output(root="pc_", base_dir="chains/", n_live=100):
+    """
+    Analyse output of PC runs
+    """
+    label1 = "=== local volume -- log(<X_p>) ==="
+    label2 = "=== Number of likelihood calls ==="
+
+    log_xp = get_line("{}/{}.resume".format(base_dir, file_root), label1)
+    log_x = logsumexp(log_xp)
+    n_iter = -log_x * n_live
+
+    # Get evidence data
+    ev_name = "{}/{}_dead.txt".format(base_dir, file_root)
+    ev_data = np.genfromtxt(ev_name)
+    test_statistic = ev_data[:,0]
+    log_x = -np.arange(0, len(test_statistic), 1.) / n_live
+    log_x_delta = np.sqrt(-log_x / n_live)
+
+    # Get number of PC calls
+    calls = int(get_line("chains/"+root+".resume", label2)[0])
+
+    return Result.from_ns(n_iter, n_live, calls), test_statistic, log_x, log_x_delta
+
+def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, base_dir="chains/", **kwargs):
     """
     Nested sampling with PC
     """
