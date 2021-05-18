@@ -137,7 +137,7 @@ def pc_wrap(test_statistic):
     return wrapped
 
 def mn(test_statistic, transform, n_dim, observed,
-       n_live=100, max_calls=1e8, basename="chains/mn_",
+       n_live=100, max_calls=1e10, basename="chains/mn_",
        resume=False, ev_data=False, sampling_efficiency=0.3, **kwargs):
     """
     Nested sampling with MN
