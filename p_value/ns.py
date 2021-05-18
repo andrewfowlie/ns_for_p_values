@@ -86,7 +86,7 @@ def pc_wrap(test_statistic):
     return wrapped
 
 def mn(test_statistic, transform, n_dim, observed,
-       n_live=100, max_calls=1e10, basename="chains/mn_",
+       n_live=100, max_calls=1e10, basename="chains/mn_", do_clustering=False,
        resume=False, ev_data=False, sampling_efficiency=0.3, **kwargs):
     """
     Nested sampling with MN.
@@ -154,6 +154,7 @@ def mn(test_statistic, transform, n_dim, observed,
                     dump_callback=dumper(3, observed),
                     importance_nested_sampling=False,
                     sampling_efficiency=sampling_efficiency,
+                    multimodal=do_clustering,
                     evidence_tolerance=0.,
                     resume=resume, **kwargs)
 
@@ -211,7 +212,9 @@ def analyse_pc_output(root="pc_", base_dir="chains/", n_live=100):
 
     return Result.from_ns(n_iter, n_live, calls), test_statistic, log_x, log_x_delta
 
-def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", feedback=0, resume=False, ev_data=False, base_dir="chains/", **kwargs):
+def pc(test_statistic, transform, n_dim, observed,
+       n_live=100, base_dir="chains/", file_root="pc_", do_clustering=False,
+       resume=False, ev_data=False, feedback=0, **kwargs):
     """
     Nested sampling with PC
     """
@@ -224,7 +227,7 @@ def pc(test_statistic, transform, n_dim, observed, n_live=100, file_root="pc_", 
     settings.file_root = file_root
     settings.nlive = n_live
     settings.logLstop = observed
-    settings.do_clustering = False
+    settings.do_clustering = do_clustering
     settings.feedback = feedback
 
     loglike = pc_wrap(test_statistic)
