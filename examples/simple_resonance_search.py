@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 sys.path.append("./..")
 sys.path.append("./../p_value")
-from p_value.ns import pc, ns_result
+from p_value.ns import analyse_pc_output, pc
 from p_value.brute import brute_low_memory
 
 
@@ -32,39 +32,6 @@ def three_bin_ts_loop(data):
     ts_1 = np.array(ts_1)
     return np.max(ts_0-ts_1)
 
-def get_line(file, label):
-    with open(file) as res_file:
-        for line in res_file:
-            if line.strip() == label:
-                next_line = res_file.readline()
-                return np.array([float(e) for e in next_line.split()])
-        else:
-            raise RuntimeError("didn't find {}".format(label))
-
-def analyse_pch(root="pc_simple", n_live=100):
-    # Analyse PCh results
-    n_live = n_live
-    root = root
-    label1 = "=== local volume -- log(<X_p>) ==="
-    label2 = "=== Number of likelihood calls ==="
-
-    log_xp = get_line("chains/"+root+".resume", label1)
-    log_x = logsumexp(log_xp)
-    n_iter = -log_x * n_live
-    print(log_x / np.log(10.))
-    # get ev data
-    ev_name = "chains/"+root+"_dead.txt"
-    ev_data = np.genfromtxt(ev_name)
-    test_statistic = ev_data[:, 0]
-    log_x = -np.arange(0, len(test_statistic), 1.) / n_live
-    log_x_delta = np.sqrt(-log_x / n_live)
-
-    pch_calls = int(get_line("chains/"+root+".resume", label2)[0])
-    
-    res = ns_result(n_iter, n_live, pch_calls)
-    
-    return res, test_statistic, log_x
-
 observed = 30.
 ts_vals_range = np.linspace(0, observed, 200)
 
@@ -87,18 +54,15 @@ if __name__ == "__main__":
     n_samples = int(1e6)
     #ts_vals = [very_simple_ts(norm.rvs(loc=0, scale=1, size=30)) for i in range(n_samples)]
     #ts_vals_threebin = [three_bin_ts(norm.rvs(loc=0, scale=1, size=30)) for i in tqdm(range(n_samples))]
-
     b = brute_low_memory(very_simple_ts, very_simple_transform, 30, ts_vals_range, n=n_samples)
     b_3b = brute_low_memory(three_bin_ts, very_simple_transform, 30, ts_vals_range, n=n_samples)
 
     # Polychord
-    res1, res2 = pc(very_simple_ts, very_simple_transform, n_dim=30, observed=observed, n_live=100, file_root="pc_simple", do_clustering=False, feedback=2, resume=False, ev_data=True)
+    res1_1b, res2-1b = pc(very_simple_ts, very_simple_transform, n_dim=30, observed=observed, n_live=100, file_root="pc_1bin", do_clustering=False, feedback=2, resume=False, ev_data=True)
     res1_3b, res2_3b = pc(three_bin_ts, very_simple_transform, n_dim=30, observed=observed, n_live=100, file_root="pc_3bin", do_clustering=False, feedback=2, resume=False, ev_data=True)
 
-    #p_vals_range, _ = calc_pvals(ts_vals)
-    #p_vals_threebin_range, _ = calc_pvals(ts_vals_threebin)
-    res, test_statistic, log_x = analyse_pch()
-    res_3b, test_statistic_3b, log_x_3b = analyse_pch("pc_3bin")
+    res, test_statistic, log_x, log_x_delta = analyse_pch(root="pc_1bin")
+    res_3b, test_statistic_3b, log_x_3b, log_x_3b_delta = analyse_pch(root="pc_3bin")
 
     # analytic in this case
     log10_local_p = chi2.logsf(ts_vals_range, df=1) / np.log(10)
@@ -122,5 +86,3 @@ if __name__ == "__main__":
     plt.legend(title='3-bin example')
     plt.savefig("simple_ts_threebin.pdf")
     plt.show()
-    
-

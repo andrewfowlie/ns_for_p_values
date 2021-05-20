@@ -13,7 +13,7 @@ sys.path.insert(0, script_dir)
 
 import higgs_functions as higgs
 
-wrapper_mapping = { 'higgs': higgs.nested_ts, 'higgs_full': higgs.nested_ts_full, 'higgs_af_fxbkg': af.nested_ts_fixed_bkg, 'higgs_fxbkg': higgs.nested_ts_bkg, 'higgs_sbkg': higgs.nested_ts_simple, 'higgs_fast': higgs.nested_ts_simple_fast }
+wrapper_mapping = { 'higgs_simple': higgs.nested_ts_simple, 'higgs_fast': higgs.nested_ts_simple_fast }
 
 output_path = sys.argv[1]
 try:
@@ -32,10 +32,6 @@ def current_datetime():
 
 def run_process_batch(index):
     res0 = np.array([wrapper_fun(data) for data in [poisson.rvs(higgs.expected_bkg) for i in range(n_batch_size)]])
-    # res0 = wrapper_fun(index, n_batch_size)
-    #out_file_name = output_path+'/temp/tsval_{}_batch_{:d}.dat'.format(sys.argv[2],int(index))
-    #np.savetxt(out_file_name, res0, fmt='%.6e')
-    #res1 = np.array(res0[:,-1])
     res1 = np.array(res0)
     return res1
 
@@ -59,9 +55,9 @@ if (rank > 0):
         comm.Send(tsvals, dest=0)
     print('{}: MPI rank {} finished! MC simulations took {:.1f} mins.'.format(current_datetime(), rank, (time.time()-start_time)/60.0))
 
-# Let the master process distribute tasks and receive results:
+# Let the main process distribute tasks and receive results.
 if (rank == 0):
-    print('Master process waiting for {} results from {} other processes...'.format(n_tasks, ncores-1), flush=True)
+    print('Main process waiting for {} results from {} other processes...'.format(n_tasks, ncores-1), flush=True)
     all_results = np.array([])
     for task_id in range(ncores, n_batches+ncores):
         info = MPI.Status()
@@ -75,10 +71,10 @@ if (rank == 0):
             out_file_name = output_path+'/temp/tsval_{}_batch_{:d}.dat'.format(sys.argv[2],int(task_id/five_percent_batch))
             np.savetxt(out_file_name, all_results[-five_percent_batch*n_batch_size:].T, fmt='%.6e')
     print('{}: All MPI tasks finished after {:.1f} mins!'.format(current_datetime(), rank, (time.time()-start_time)/60.0), flush=True)
-    out_file_name = output_path+'/run'+run_nr+'_tsvals_'+sys.argv[2]+'.dat'
+    # out_file_name = output_path+'/run'+run_nr+'_tsvals_'+sys.argv[2]+'.dat'
     out_file_name_h5 = output_path+'/run'+run_nr+'_tsvals_'+sys.argv[2]+'.hdf5'
     print('Formatting results and saving them to '+out_file_name+'.', flush=True)
-    np.savetxt(out_file_name, all_results.T, fmt='%.6e')
+    # np.savetxt(out_file_name, all_results.T, fmt='%.6e')
     with h5.File(out_file_name_h5, 'w') as f:
         f.create_dataset("ts_vals", data=all_results)
     print('All tasks complete! Finishing MPI routine now...', flush=True)
