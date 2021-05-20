@@ -4,7 +4,9 @@ P-value computation with NS via dynesty, PolyChord or MultiNest
 """
 
 import logging
+import warnings
 import numpy as np
+import mpi4py
 from scipy.special import logsumexp
 
 from dynesty import NestedSampler
@@ -16,6 +18,11 @@ from .result import Result
 
 
 logging.getLogger().setLevel(logging.DEBUG)
+
+
+# Note that MN interface won't work with MPI
+if mpi4py.MPI.COMM_WORLD.Get_size() > 1:
+    warnings.warn("MN analysis of counts and thresholds faulty if running in MPI")
 
 
 def analyze_mn_output(observed, root="chains/mn_", n_live=100):

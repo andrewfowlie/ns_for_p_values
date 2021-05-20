@@ -3,6 +3,7 @@ scipy
 numpy
 matplotlib
 tqdm
+mpi4py
 
 # NS software
 dynesty
