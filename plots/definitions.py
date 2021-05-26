@@ -24,6 +24,14 @@ def log10_special_formatter(x, pos):
         res = "$%g$" % (10.0**x)
     return res
 
+def log10_special_formatter_every_n(x, pos, n=2):
+    res = ""
+    if x%n == 0:
+        res = "$10^{%g}$" % (x)
+        if np.abs(x) < 3:
+            res = "$%g$" % (10.0**x)
+    return res
+
 def pow10_formatter(x, pos):
     lgx = int(np.log10(x))
     if np.abs(lgx) < 3:

@@ -98,7 +98,6 @@ compression = p_value / x_start
 t = compression**(1. / n)
 nlive = -1. / np.log(t)
 chi2_threshold = [model.isf(x_start * t**i) for i in range(0, n + 1)]
-print(nlive)
 
 for i, (t, a) in enumerate(zip(chi2_threshold, alpha)):
     ax[1].vlines(t, 0, model.pdf(t), color="goldenrod", lw=3, alpha=a) # , label="Threshold $\chi^2$" if not i else None)
