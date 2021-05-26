@@ -31,7 +31,7 @@ ax = [ax0, plt.subplot(gs[1], sharex=ax0)]
 with open("../examples/pkl/mc.pkl", 'rb') as pkl:
     x, mc, pns = pickle.load(pkl)
 
-ax[0].plot(x, mc, label="Monte Carlo", c="grey")
+ax[0].plot(x, mc, label="Monte Carlo", c="grey", zorder=10)
 ax[0].plot(x, pns, label="Perfect NS", c="k")
 ax[1].plot(x, mc / pns, c="k")
 ax[1].plot(x, mc / mc, c="grey")
@@ -43,7 +43,7 @@ for d, l in zip(dims, ls_list):
         with open(pkl_name, 'rb') as pkl:
             px, py = pickle.load(pkl)
 
-        p = ax[0].plot(px, py, label=r"\textsc{{PolyChord}} ($d = {})$".format(d), ls=l, c='r')
+        p = ax[0].plot(px, py, label=r"\textsc{{PolyChord}} ($d = {})$".format(d), ls=l, c='r', zorder=5)
         pr = []
         for t, c in zip(px, py):
             p_value = norm.sf(t)
@@ -72,6 +72,7 @@ for d, l in zip(dims, ls_list):
 ax[0].axvline(5, lw=1, ls=':', c='k')
 ax[1].axvline(5, lw=1, ls=':', c='k')
 
+ax[0].set_ylim(1e1, 1e14)
 ax[1].set_ylim(1e-3, 1e9)
 ax[0].set_xlim(0, 7)
 ax[1].set_yscale('log')
@@ -87,6 +88,9 @@ minor_locator = plt.FixedLocator([10**float(p) for p in range(-5, 10)])
 ax[1].yaxis.set_major_locator(major_locator)
 ax[1].yaxis.set_minor_locator(minor_locator)
 ax[1].yaxis.set_major_formatter(pow10_formatter)
+ax[0].tick_params(axis='y', which='minor', left=True, direction='in')
+ax[0].set_yticks([10**p for p in range(1, 15, 1)], minor=True)
+ax[0].set_yticks([10**p for p in range(3, 15, 2)])
 
 ax[1].set_xlabel("Significance $Z$")
 ax[0].set_ylabel("TS calls (proxy for speed)")
@@ -106,7 +110,10 @@ handles, labels = ax[0].get_legend_handles_labels()
 ordered = handles
 leg = ax[0].legend(handles=ordered, frameon=False, ncol=1, labelspacing=0.55, handlelength=1.9, handletextpad=0.5)
 
+for a in ax:
+    a.set_axisbelow(False)
 plt.setp(ax[0].get_xticklabels(), visible=False)
+plt.setp(ax[0].get_yticklabels(minor=True), visible=False)
 plt.setp(ax[1].get_yticklabels(minor=True), visible=False)
 plt.tight_layout(pad=0.5)
 plt.savefig("performance.pdf")
