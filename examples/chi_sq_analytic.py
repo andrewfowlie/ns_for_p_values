@@ -103,7 +103,7 @@ if __name__ == "__main__":
             with open(pkl_name, 'rb') as pkl:
                 px, py = pickle.load(pkl)
         except IOError:
-            tmax = chi2.isf(norm.sf(5. if d >= 30 else 7.), d)
+            tmax = chi2.isf(norm.sf(7.), d)
             tmin = chi2.isf(norm.sf(0.), d)
 
             px = []
