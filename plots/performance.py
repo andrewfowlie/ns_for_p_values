@@ -5,7 +5,6 @@ Plot significance against calls for MN and PC
 Requires data saved as pikcles.
 """
 
-import pickle
 import numpy as np
 
 from scipy.stats import norm
@@ -39,9 +38,8 @@ ax[1].plot(x, mc / mc, c="grey")
 
 for d, l in zip(dims, ls_list):
     try:
-        pkl_name = "../examples/pkl/pc_dim_{}.pkl".format(d)
-        with open(pkl_name, 'rb') as pkl:
-            px, py = pickle.load(pkl)
+        txt_name = "./data/pc_dim_{}.txt".format(d)
+        px, py = np.loadtxt(txt_name)
 
         p = ax[0].plot(px, py, label=r"\textsc{{PolyChord}} ($d = {})$".format(d), ls=l, c='r', zorder=5)
         pr = []
@@ -55,9 +53,8 @@ for d, l in zip(dims, ls_list):
 
 for d, l in zip(dims, ls_list):
     try:
-        pkl_name = "../examples/pkl/mn_dim_{}.pkl".format(d)
-        with open(pkl_name, 'rb') as pkl:
-            px, py = pickle.load(pkl)
+        txt_name = "./data/mn_dim_{}.txt".format(d)
+        px, py = np.loadtxt(txt_name)
 
         p = ax[0].plot(px, py, label=r"\textsc{{MultiNest}} ($d = {})$".format(d), ls=l, c='b')
         pr = []
