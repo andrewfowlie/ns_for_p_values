@@ -115,13 +115,16 @@ class loglike_wrapper_simple_bkg(object):
         bkg = (x[0] + 1.0)*expected_bkg
         return -2.0 * np.maximum(self.logpmf(bkg), -1.0e99)
 
-class loglike_wrapper_simple_asimov(object):
+class ts_wrapper_simple_goodness_of_fit(object):
     def __init__(self, data):
-        self.data = data
-        gammaln_sum = gammaln(data + 1).sum()
-        self.logpmf = lambda x: logpmf(data, x, gammaln_sum)
-    def __call__(self):
-        return -2.0 * np.maximum(self.logpmf(self.data), -1.0e99)
+        asimov =  logpmf(data, data, 0).sum()
+        self.logpmf = lambda x: logpmf(data, x, asimov)
+    def __call__(self, x):
+        mu, sigma, n_events = x[1], sigma_from_atlas, x[2]
+        sig = gaussian_signal(edges, mu, sigma, n_events)
+        bkg = (x[0] + 1.0)*expected_bkg
+        spb = sig + bkg
+        return -2.0 * np.maximum(self.logpmf(spb), -1.0e99)
 
 # Test statistics functions for the profile likelihood ratio
 
@@ -164,7 +167,5 @@ def goodness_of_fit_ts(data):
     x00[-1] = 0.0
     xlims = simple_bkg_bounds+simple_sig_bounds
     xinit = np.array(20*[x0] + 20*[x00] + [[rng.uniform(x[0],x[1]) for x in xlims] for i in range(110)])
-    res1 = differential_evolution(loglike_wrapper_simple_spb(data), bounds=xlims, init=xinit, tol=0.0001)
-    ts1 = res1.fun
-    ts0 = loglike_wrapper_simple_asimov(data)()
-    return ts0-ts1
+    res1 = differential_evolution(ts_wrapper_simple_goodness_of_fit(data), bounds=xlims, init=xinit, tol=0.0001)
+    return res1.fun
