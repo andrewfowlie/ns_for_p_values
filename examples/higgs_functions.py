@@ -115,6 +115,16 @@ class loglike_wrapper_simple_bkg(object):
         bkg = (x[0] + 1.0)*expected_bkg
         return -2.0 * np.maximum(self.logpmf(bkg), -1.0e99)
 
+class loglike_wrapper_simple_asimov(object):
+    def __init__(self, data):
+        self.data = data
+        gammaln_sum = gammaln(data + 1).sum()
+        self.logpmf = lambda x: logpmf(data, x, gammaln_sum)
+    def __call__(self):
+        return -2.0 * np.maximum(self.logpmf(self.data), -1.0e99)
+
+# Test statistics functions for the profile likelihood ratio
+
 def nested_ts_simple(data):
     xinit0 = np.array(10*[simple_bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in simple_bkg_bounds] for i in range(40)])
     res0 = differential_evolution(loglike_wrapper_simple_bkg(data), bounds=simple_bkg_bounds, init=xinit0, tol=0.0001)
@@ -140,4 +150,21 @@ def nested_ts_simple_fast(data):
     xinit = np.array(10*[x0] + 10*[x00] + [[rng.uniform(x[0],x[1]) for x in xlims] for i in range(80)])
     res1 = differential_evolution(loglike_wrapper_simple_spb(data), bounds=xlims, init=xinit, tol=0.0001)
     ts1 = res1.fun
+    return ts0-ts1
+
+# Goodness-of-fit test for the Standard Model incl. the Higgs
+
+def goodness_of_fit_ts(data):
+    # Don't need loglike of background only, but use this as a starting point for fitting
+    xinit0 = np.array(10*[simple_bkg_bfg] + [[rng.uniform(x[0],x[1]) for x in simple_bkg_bounds] for i in range(40)])
+    res0 = differential_evolution(loglike_wrapper_simple_bkg(data), bounds=simple_bkg_bounds, init=xinit0, tol=0.0001)
+    x0 = list(res0.x)+simple_sig_bfg
+    x0[-2:] = guess_loc_scale(data)
+    x00 = np.copy(x0)
+    x00[-1] = 0.0
+    xlims = simple_bkg_bounds+simple_sig_bounds
+    xinit = np.array(20*[x0] + 20*[x00] + [[rng.uniform(x[0],x[1]) for x in xlims] for i in range(110)])
+    res1 = differential_evolution(loglike_wrapper_simple_spb(data), bounds=xlims, init=xinit, tol=0.0001)
+    ts1 = res1.fun
+    ts0 = loglike_wrapper_simple_asimov(data)()
     return ts0-ts1
