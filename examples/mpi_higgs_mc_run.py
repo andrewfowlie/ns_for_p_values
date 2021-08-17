@@ -13,7 +13,7 @@ sys.path.insert(0, script_dir)
 
 import higgs_functions as higgs
 
-wrapper_mapping = { 'higgs_simple': higgs.nested_ts_simple, 'higgs_fast': higgs.nested_ts_simple_fast }
+wrapper_mapping = { 'higgs_simple': higgs.nested_ts_simple, 'higgs_fast': higgs.nested_ts_simple_fast, 'gof': higgs.goodness_of_fit_ts }
 
 output_path = sys.argv[1]
 try:
