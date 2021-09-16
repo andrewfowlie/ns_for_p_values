@@ -96,7 +96,7 @@ ax[0].set_ylabel("TS calls (proxy for speed)")
 ax[1].set_ylabel("Speed-up")
 
 secax = ax[0].secondary_xaxis('top', functions=(norm.sf, norm.isf))
-secax.tick_params(which='both', direction='in', top=True, pad=1.5, labelsize=9)
+secax.tick_params(which='both', direction='in', top=True, pad=2.25, labelsize=9)
 formatter = plt.FuncFormatter(pow10_formatter)
 major_locator = plt.FixedLocator([1/10**p for p in [1, 4, 7, 10]])
 minor_locator = plt.FixedLocator([1/10**p for p in range(1, 12)])
