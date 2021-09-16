@@ -92,7 +92,7 @@ ax[0].set_yticks([10**p for p in range(1, 15, 1)], minor=True)
 ax[0].set_yticks([10**p for p in range(3, 15, 2)])
 
 ax[1].set_xlabel("Significance $Z$")
-ax[0].set_ylabel("TS calls (proxy for speed)")
+ax[0].set_ylabel("TS evaluations (proxy for speed)")
 ax[1].set_ylabel("Speed-up")
 
 secax = ax[0].secondary_xaxis('top', functions=(norm.sf, norm.isf))
