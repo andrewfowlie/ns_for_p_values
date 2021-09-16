@@ -26,7 +26,7 @@ def custom_text_line(axis, pos_x, pos_y, text):
 
 np.random.seed(185)
 set_style(gs=14)
-fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.75), sharey=True)
+fig, ax = plt.subplots(1, 2, figsize=(7.0, 3), sharey=True)
 ts_name = "\\ensuremath{\\lambda}"
 
 # define model - chi-squared with particular number of dofs
@@ -68,7 +68,7 @@ add_vertical_line(handles, labels, "Critical "+ts_name, "Crimson", 3, 12)
 ax[0].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, fontsize=9, borderaxespad=1)
 
 # Annotations
-custom_text_line(ax[0], 0.27, 0.74, "Evaluate "+ts_name+" for $n$ sets of\nrandomly generated pseudo-data")
+custom_text_line(ax[0], 0.27, 0.65, "Evaluate "+ts_name+" for $n$ sets of\nrandomly generated pseudo-data")
 
 arrow = mpatches.FancyArrowPatch((1.7, 0.0325), (0.5, 0.01), mutation_scale=8, color=shade_of_grey, lw=0, zorder=15)
 ax[0].add_patch(arrow)
@@ -78,7 +78,7 @@ ax[0].text(1.75, 0.03,
            "Monte Carlo\nrandom samples",
            fontsize=9, color=shade_of_grey, horizontalalignment='left', verticalalignment='center')
 
-ax[0].text(11.75, 0.035,
+ax[0].text(11.75, 0.04,
            'Tail area $\\approx$\n'
            'fraction of samples\n'
            'above critical value',

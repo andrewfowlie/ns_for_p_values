@@ -22,7 +22,7 @@ set_style()
 ts_vals, mc_lgpval, mc_lgpval_err_lo, mc_lgpval_err_hi, pch_lgpvals, pch_lgpvals_err,\
 mn_lgpvals, mn_lgpvals_err = np.genfromtxt('data/resonance_search_pvals.txt', unpack=True)
 
-fig, ax = plt.subplots(figsize=(3.375,2.1))
+fig, ax = plt.subplots(figsize=(3.375,1.8))
 
 # Plot the Monte Carlo results with Clopper-Pearson error bands
 ax.plot(ts_vals, mc_lgpval, c='grey', ls='-', label='Monte Carlo')

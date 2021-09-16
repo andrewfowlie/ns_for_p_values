@@ -7,6 +7,8 @@ Requires data saved as pikcles.
 
 import numpy as np
 
+import pickle
+
 from scipy.stats import norm
 
 import matplotlib.pyplot as plt
@@ -22,7 +24,7 @@ dims = [1, 5, 30]
 ls_list = ['--', ':', '-.']
 
 fig = plt.figure()
-fig.set_size_inches(3.375, 4.25)
+fig.set_size_inches(3.375, 4)
 gs = gridspec.GridSpec(2, 1, hspace=0., height_ratios=[3., 1.])
 ax0 = plt.subplot(gs[0])
 ax = [ax0, plt.subplot(gs[1], sharex=ax0)]
@@ -112,5 +114,5 @@ for a in ax:
 plt.setp(ax[0].get_xticklabels(), visible=False)
 plt.setp(ax[0].get_yticklabels(minor=True), visible=False)
 plt.setp(ax[1].get_yticklabels(minor=True), visible=False)
-plt.tight_layout(pad=0.5)
-plt.savefig("performance.pdf")
+plt.tight_layout(pad=0.25)
+plt.savefig("performance.pdf", backend='pgf')
