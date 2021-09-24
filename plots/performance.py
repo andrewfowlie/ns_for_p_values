@@ -24,7 +24,7 @@ dims = [1, 5, 30]
 ls_list = ['--', ':', '-.']
 
 fig = plt.figure()
-fig.set_size_inches(3.375, 4)
+fig.set_size_inches(3.375, 3.6)
 gs = gridspec.GridSpec(2, 1, hspace=0., height_ratios=[3., 1.])
 ax0 = plt.subplot(gs[0])
 ax = [ax0, plt.subplot(gs[1], sharex=ax0)]
@@ -107,12 +107,12 @@ secax.set_xlabel(r"\textit{P-}value computed to 10\% uncertainty", labelpad=6.)
 
 handles, labels = ax[0].get_legend_handles_labels()
 ordered = handles
-leg = ax[0].legend(handles=ordered, frameon=False, ncol=1, labelspacing=0.55, handlelength=1.9, handletextpad=0.5)
+leg = ax[0].legend(bbox_to_anchor=(-0.005,1.02), loc='upper left', handles=ordered, frameon=False, ncol=1, labelspacing=0.375, handlelength=1.9, handletextpad=0.5)
 
 for a in ax:
     a.set_axisbelow(False)
 plt.setp(ax[0].get_xticklabels(), visible=False)
 plt.setp(ax[0].get_yticklabels(minor=True), visible=False)
 plt.setp(ax[1].get_yticklabels(minor=True), visible=False)
-plt.tight_layout(pad=0.25)
+plt.tight_layout(pad=0.125)
 plt.savefig("performance.pdf", backend='pgf')

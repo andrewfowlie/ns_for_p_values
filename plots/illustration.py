@@ -26,7 +26,7 @@ def custom_text_line(axis, pos_x, pos_y, text):
 
 np.random.seed(185)
 set_style(gs=14)
-fig, ax = plt.subplots(1, 2, figsize=(7.0, 3), sharey=True)
+fig, ax = plt.subplots(1, 2, figsize=(7.0, 2.75), sharey=True)
 ts_name = "\\ensuremath{\\lambda}"
 
 # define model - chi-squared with particular number of dofs
@@ -120,13 +120,13 @@ for i in range(n):
 # Annotations
 arrow = mpatches.FancyArrowPatch((0.2725, 0.72), (0.2, 0.465), mutation_scale=8, color="k", lw=0, zorder=15, transform=ax[1].transAxes)
 ax[1].add_patch(arrow)
-custom_text_line(ax[1], 0.27, 0.74, "At each iteration:")
-custom_text_line(ax[1], 0.28, 0.68, "\\textbullet threshold $"+ts_name+"^\\star$ increases")
-custom_text_line(ax[1], 0.28, 0.63, "\\textbullet draw from $"+ts_name+" > "+ts_name+"^\\star$")
-custom_text_line(ax[1], 0.28, 0.58, "\\textbullet area compresses by $\\sim \\mathrm{e}^{-1 / n_\\text{live}}$")
+custom_text_line(ax[1], 0.27, 0.75, "At each iteration:")
+custom_text_line(ax[1], 0.28, 0.66, "\\textbullet threshold $"+ts_name+"^\\star$ increases")
+custom_text_line(ax[1], 0.28, 0.59, "\\textbullet draw from $"+ts_name+" > "+ts_name+"^\\star$")
+custom_text_line(ax[1], 0.28, 0.52, "\\textbullet area compresses by $\\sim \\mathrm{e}^{-1 / n_\\text{live}}$")
 
 
-ax[1].text(0.765, 0.125,
+ax[1].text(0.765, 0.14,
            'Tail area $\\approx$ yellow area\n'
            'when threshold reaches\n'
            'critical '+ts_name,
@@ -148,6 +148,6 @@ ax[1].legend(handles, labels, handletextpad=0.1, ncol=2, columnspacing=0.5, font
 
 ax[1].set_title("Nested sampling", fontsize=10)
 
-plt.tight_layout(pad=0.5, w_pad=2)
+plt.tight_layout(pad=0.3, w_pad=1.5)
 #plt.savefig("ill.png")
 plt.savefig("ill.pdf", backend='pgf')
